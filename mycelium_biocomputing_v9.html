@@ -1,0 +1,2615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="A speculative research project comparing mycelium-based biotechnology inventions for biological data storage, bio-computing, and regenerative farming. Created by Ashlee Conery.">
+<title>Mycelium Bio-Computing — Speculative Research</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Share+Tech+Mono&family=Jost:wght@300;400&display=swap');
+
+/* ─── DESIGN TOKENS ─────────────────────────────────
+   Contrast ratios against #030305 background:
+   --white  #f0ede8  → 18.9:1  ✓
+   --purple #b87fff  → 7.2:1   ✓ (lightened from #9b59f5 which was 5.1:1)
+   --blue   #5ec9ff  → 8.1:1   ✓ (lightened from #3ab5f7 which was 4.8:1)
+   --orange #f07d28  → 5.2:1   ✓
+   --muted  #b0aaa2  → 5.3:1   ✓ (replaces rgba(240,237,232,0.55) which was ~3.8:1)
+   ──────────────────────────────────────────────── */
+:root {
+  --black:  #030305;
+  --white:  #f0ede8;
+  --purple: #b87fff;
+  --blue:   #5ec9ff;
+  --orange: #f07d28;
+  --muted:  #b0aaa2;
+  --grid:   rgba(240,237,232,0.06);
+
+  /* minimum font size = 16px = 12pt */
+  --fs-base:   1rem;       /* 16px */
+  --fs-sm:     0.875rem;   /* 14px — only for table cells with overflow constraint */
+  --fs-mono:   1rem;       /* 16px */
+  --fs-label:  1rem;       /* 16px — was 10/11px, bumped up */
+  --fs-h1:     clamp(2rem, 3.5vw, 3.2rem);
+  --fs-h2:     2.4rem;
+  --fs-h3:     1.25rem;
+}
+
+/* ─── SKIP LINK ────────────────────────────────── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--orange);
+  color: var(--black);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: var(--fs-mono);
+  font-weight: 700;
+  border-radius: 0 0 4px 4px;
+  z-index: 9999;
+  text-decoration: none;
+  transition: top 0.2s;
+}
+.skip-link:focus {
+  top: 0;
+  outline: 3px solid var(--white);
+  outline-offset: 2px;
+}
+
+/* ─── GLOBAL FOCUS STYLE ───────────────────────── */
+:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Remove default focus outline only when focus-visible is supported */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ─── REDUCED MOTION ───────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  #server-preview-wrap { animation: none !important; }
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--black);
+  color: var(--white);
+  font-family: 'Jost', sans-serif;
+  font-size: var(--fs-base);
+  font-weight: 300;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* ─── NAV ─── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 3rem;
+  background: rgba(3,3,5,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(240,237,232,0.12);
+}
+.nav-logo {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: var(--fs-mono);
+  letter-spacing: 0.14em;
+  color: var(--purple);
+  text-transform: uppercase;
+}
+.nav-links { display: flex; gap: 2.5rem; }
+.nav-links a {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: var(--fs-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.3s;
+  padding: 0.25rem 0.1rem;
+  border-bottom: 2px solid transparent;
+}
+.nav-links a:hover { color: var(--white); }
+.nav-links a.active {
+  color: var(--white);
+  border-bottom-color: var(--orange);
+}
+.nav-links a:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+/* ─── PAGES ─── */
+.page { display: none; min-height: 100vh; padding-top: 64px; }
+.page.active { display: block; }
+
+/* ══════════════════════════════════════════
+   PAGE 1 — HOME
+══════════════════════════════════════════ */
+#page-home {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Hyphal canvas background */
+#hypha-canvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.home-content {
+  position: relative; z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: calc(100vh - 64px);
+  padding: 0;
+}
+
+.home-left {
+  padding: 5rem 3.5rem 5rem 5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.home-eyebrow {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: var(--fs-label);
+  letter-spacing: 0.18em;
+  color: var(--purple);
+  text-transform: uppercase;
+  margin-bottom: 1.2rem;
+}
+
+.home-title {
+  font-family: 'Playfair Display', serif;
+  font-size: var(--fs-h1);
+  line-height: 1.15;
+  margin-bottom: 0.4rem;
+  color: var(--white);
+}
+
+.home-title em {
+  font-style: italic;
+  color: var(--orange);
+}
+
+.home-subtitle {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: var(--fs-mono);
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 2.5rem;
+  line-height: 1.8;
+}
+
+.exec-summary {
+  font-size: var(--fs-base);
+  line-height: 1.9;
+  color: var(--white);
+  max-width: 520px;
+  border-left: 2px solid var(--orange);
+  padding-left: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.exec-summary strong {
+  color: var(--white);
+  font-weight: 400;
+}
+
+.home-tags {
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+
+.home-tag {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: var(--fs-label);
+  letter-spacing: 0.08em;
+  padding: 6px 12px;
+  border: 1px solid rgba(184,127,255,0.5);
+  color: var(--purple);
+  border-radius: 2px;
+}
+
+.home-right {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+#server-preview-wrap {
+  width: 420px;
+  height: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: slowspin 40s linear infinite;
+  filter: drop-shadow(0 0 24px rgba(155,89,245,0.25));
+}
+
+@keyframes slowspin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+#server-preview-svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* ══════════════════════════════════════════
+   PAGE 2 — DATABASE
+══════════════════════════════════════════ */
+#page-database {
+  padding: 80px 5rem 5rem;
+  position: relative;
+}
+
+.page-header {
+  margin-bottom: 3rem;
+}
+
+.page-eyebrow {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: var(--fs-label);
+  letter-spacing: 0.18em;
+  color: var(--purple);
+  text-transform: uppercase;
+  margin-bottom: 0.8rem;
+}
+
+.page-title {
+  font-family: 'Playfair Display', serif;
+  font-size: var(--fs-h2);
+  margin-bottom: 0.8rem;
+  color: var(--white);
+}
+
+.page-desc {
+  font-size: var(--fs-base);
+  color: var(--muted);
+  max-width: 640px;
+  line-height: 1.8;
+}
+
+/* Scraper status */
+.scraper-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.875rem 1.2rem;
+  background: rgba(184,127,255,0.07);
+  border: 1px solid rgba(184,127,255,0.25);
+  border-radius: 4px;
+  margin-bottom: 2rem;
+}
+
+.scraper-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--purple);
+  animation: pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+.scraper-text {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: var(--fs-mono);
+  color: var(--muted);
+  flex: 1;
+}
+
+#scraper-status {
+  color: var(--purple);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: var(--fs-mono);
+  font-weight: 400;
+}
+
+.btn-scrape {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: var(--fs-mono);
+  letter-spacing: 0.08em;
+  padding: 8px 16px;
+  border: 2px solid var(--orange);
+  color: var(--orange);
+  background: transparent;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.25s;
+  min-height: 44px;
+}
+
+.btn-scrape:hover {
+  background: var(--orange);
+  color: var(--black);
+}
+
+.btn-scrape:focus-visible {
+  outline: 3px solid var(--white);
+  outline-offset: 3px;
+}
+
+/* Filter row */
+.filter-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.filter-chip {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: var(--fs-mono);
+  letter-spacing: 0.06em;
+  padding: 8px 14px;
+  border: 1px solid rgba(176,170,162,0.45);
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.2s;
+  min-height: 44px;
+}
+
+.filter-chip.active {
+  background: rgba(240,237,232,0.07);
+}
+
+.filter-chip:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 3px;
+}
+
+/* Role filter chips — same style, accent in blue */
+.filter-chip-role {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: var(--fs-mono);
+  letter-spacing: 0.06em;
+  padding: 8px 14px;
+  border: 1px solid rgba(94,201,255,0.3);
+  color: var(--blue);
+  background: transparent;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.2s;
+  min-height: 44px;
+}
+.filter-chip-role.active,
+.filter-chip-role:hover {
+  border-color: var(--blue);
+  background: rgba(94,201,255,0.08);
+  color: var(--white);
+}
+.filter-chip-role:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 3px;
+}
+
+/* Role badges in table */
+.role-tag {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: var(--fs-label);
+  padding: 3px 8px;
+  border-radius: 2px;
+  white-space: nowrap;
+  font-weight: 400;
+  text-transform: capitalize;
+}
+.rt-role-storage    { background: rgba(240,125,40,0.18);  color: var(--orange); }
+.rt-role-computing  { background: rgba(184,127,255,0.18); color: var(--purple); }
+.rt-role-robotics   { background: rgba(94,201,255,0.22);  color: var(--blue);   }
+.rt-role-sensing    { background: rgba(94,201,255,0.15);  color: var(--blue);   }
+.rt-role-interface  { background: rgba(240,125,40,0.15);  color: var(--orange); }
+.rt-role-substrate  { background: rgba(176,170,162,0.2);  color: var(--muted);  }
+.rt-role-institution{ background: rgba(184,127,255,0.12); color: var(--purple); }
+
+/* Table */
+.db-table-wrap {
+  overflow-x: auto;
+}
+
+.db-table-wrap:focus {
+  outline: 3px solid var(--orange);
+  outline-offset: 2px;
+}
+
+table.db-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-base);
+}
+
+table.db-table caption {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: var(--fs-label);
+  color: var(--muted);
+  text-align: left;
+  padding-bottom: 0.75rem;
+  caption-side: top;
+}
+
+table.db-table thead th {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: var(--fs-label);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(240,237,232,0.15);
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+
+table.db-table thead th:hover,
+table.db-table thead th:focus-visible {
+  color: var(--white);
+  outline: 3px solid var(--orange);
+  outline-offset: -3px;
+}
+
+table.db-table tbody tr {
+  border-bottom: 1px solid rgba(240,237,232,0.06);
+  transition: background 0.2s;
+}
+
+table.db-table tbody tr:hover {
+  background: rgba(240,237,232,0.04);
+}
+
+table.db-table tbody tr.new-entry {
+  border-left: 3px solid var(--orange);
+}
+
+table.db-table td {
+  padding: 14px 14px;
+  vertical-align: top;
+  color: var(--white);
+  line-height: 1.6;
+  font-size: var(--fs-base);
+}
+
+table.db-table td:first-child {
+  color: var(--white);
+  font-weight: 400;
+}
+
+.score-dots {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.score-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+}
+
+.score-dot.filled { background: var(--orange); }
+.score-dot.empty {
+  background: transparent;
+  border: 1px solid rgba(240,237,232,0.3);
+}
+
+.region-tag {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: var(--fs-label);
+  padding: 3px 8px;
+  border-radius: 2px;
+  white-space: nowrap;
+  font-weight: 400;
+}
+
+/* Accessible region tag colours — all ≥5:1 contrast against their bg */
+.rt-uk { background: rgba(94,201,255,0.18); color: #5ec9ff; }
+.rt-us { background: rgba(240,125,40,0.18); color: #f07d28; }
+.rt-it { background: rgba(184,127,255,0.18); color: #b87fff; }
+.rt-eu { background: rgba(184,127,255,0.15); color: #b87fff; }
+.rt-ca { background: rgba(94,201,255,0.15); color: #5ec9ff; }
+.rt-au { background: rgba(240,125,40,0.15); color: #f07d28; }
+
+/* ══════════════════════════════════════════
+   PAGE 3 — SPECULATIVE DESIGN
+══════════════════════════════════════════ */
+#page-design {
+  padding: 80px 0 0;
+}
+
+.design-layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  min-height: calc(100vh - 64px);
+}
+
+.design-main {
+  padding: 3rem 3rem 3rem 5rem;
+  border-right: 0.5px solid rgba(240,237,232,0.06);
+}
+
+.design-legend {
+  margin: 1.5rem 0;
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: var(--fs-label);
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.legend-swatch {
+  width: 24px;
+  height: 3px;
+  flex-shrink: 0;
+}
+
+.ls-orange { background: var(--orange); }
+.ls-purple { background: var(--purple); }
+.ls-dashed {
+  background: repeating-linear-gradient(90deg, var(--muted) 0, var(--muted) 4px, transparent 4px, transparent 8px);
+}
+
+#stack-svg-wrap {
+  width: 100%;
+  background: transparent;
+  border: 1px solid rgba(240,237,232,0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+#stack-svg {
+  width: 100%;
+  height: auto;
+}
+
+.design-notes {
+  margin-top: 1.5rem;
+  font-size: var(--fs-base);
+  color: var(--muted);
+  line-height: 1.8;
+  max-width: 600px;
+}
+
+/* Gallery sidebar */
+.gallery-sidebar {
+  padding: 2rem 1.2rem;
+  overflow-y: auto;
+  max-height: calc(100vh - 64px);
+  position: sticky;
+  top: 64px;
+}
+
+.gallery-title {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(240,237,232,0.1);
+}
+
+.gallery-empty {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: var(--fs-label);
+  color: var(--muted);
+  line-height: 1.8;
+  margin-top: 1rem;
+}
+
+.gallery-item {
+  margin-bottom: 1rem;
+  border: 1px solid rgba(240,237,232,0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.gallery-item:hover,
+.gallery-item:focus-visible {
+  border-color: var(--orange);
+  outline: none;
+}
+
+.gallery-item:focus-visible {
+  box-shadow: 0 0 0 3px var(--orange);
+}
+
+.gallery-item img {
+  width: 100%;
+  display: block;
+}
+
+.gallery-item-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: var(--fs-label);
+  color: var(--muted);
+  padding: 6px 10px;
+  border-top: 1px solid rgba(240,237,232,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.gallery-delete-btn {
+  background: none;
+  border: none;
+  color: rgba(176,170,162,0.5);
+  cursor: pointer;
+  font-size: var(--fs-label);
+  padding: 0 2px;
+  line-height: 1;
+  transition: color 0.2s;
+  flex-shrink: 0;
+}
+
+.gallery-delete-btn:hover {
+  color: #e24b4a;
+}
+
+.gallery-delete-btn:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ─── FOOTER ─── */
+.site-footer {
+  background: rgba(3,3,5,0.95);
+  border-top: 1px solid rgba(240,237,232,0.1);
+  padding: 1.5rem 3rem;
+  text-align: center;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: var(--fs-label);
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.site-footer a {
+  color: var(--orange);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.2s;
+}
+
+.site-footer a:hover {
+  color: var(--white);
+}
+
+.site-footer a:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ─── role badge for research ─── */
+.rt-role-research { background: rgba(184,127,255,0.18); color: var(--purple); }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 900px) {
+  nav { padding: 1rem 1.5rem; }
+  .nav-logo { font-size: 0.875rem; }
+
+  .home-content { grid-template-columns: 1fr; }
+  .home-right { display: none; } /* hide spinning preview on small screens */
+  .home-left { padding: 3rem 1.5rem; }
+
+  #page-database { padding: 80px 1.5rem 3rem; }
+  #page-database > div { padding: 1rem 0 3rem; }
+
+  .design-layout { grid-template-columns: 1fr; }
+  .gallery-sidebar { max-height: none; position: static; border-top: 1px solid rgba(240,237,232,0.08); }
+  .design-main { padding: 2rem 1.5rem; }
+
+  .site-footer { padding: 1.5rem 1.5rem; }
+}
+
+@media (max-width: 600px) {
+  :root { --fs-base: 1rem; --fs-h2: 1.8rem; }
+  .nav-links { gap: 1rem; }
+  .scraper-bar { flex-wrap: wrap; }
+  table.db-table { font-size: 0.875rem; }
+  table.db-table thead th { font-size: 0.875rem; }
+  table.db-table td { font-size: 0.875rem; padding: 10px 8px; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(184,127,255,0.5); }
+  50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(184,127,255,0); }
+}
+
+</style>
+</head>
+<body>
+
+<!-- SKIP NAVIGATION LINK -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- NAV -->
+<nav role="navigation" aria-label="Main navigation">
+  <div class="nav-logo" aria-hidden="true">Mycelium // Bio-Computing</div>
+  <div class="nav-links" role="list">
+    <a role="listitem" onclick="showPage('home')" id="nav-home" class="active"
+       aria-current="page" tabindex="0"
+       onkeydown="if(event.key==='Enter'||event.key===' ')showPage('home')">Home</a>
+    <a role="listitem" onclick="showPage('database')" id="nav-database"
+       tabindex="0"
+       onkeydown="if(event.key==='Enter'||event.key===' ')showPage('database')">Database</a>
+    <a role="listitem" onclick="showPage('design')" id="nav-design"
+       tabindex="0"
+       onkeydown="if(event.key==='Enter'||event.key===' ')showPage('design')">Speculative Design</a>
+  </div>
+</nav>
+
+<!-- PAGE 1: HOME -->
+<div id="page-home" class="page active" role="region" aria-label="Home page">
+  <canvas id="hypha-canvas" aria-hidden="true" role="presentation"></canvas>
+  <main id="main-content" class="home-content">
+    <section class="home-left" aria-labelledby="home-heading">
+      <p class="home-eyebrow" aria-hidden="true">Research Project Proposal — 2026</p>
+      <h1 id="home-heading" class="home-title">Mycelium<br>Bio-Computing<br><em>&amp; The Farm Server</em></h1>
+      <p class="home-subtitle">A comparative study of fungal inventions in data storage,<br>energy, and regenerative farming compatibility</p>
+      <div class="exec-summary" role="article" aria-label="Executive summary">
+        This project compiles and compares existing mycelium-based biotechnology inventions relevant to biological data storage, with the goal of speculatively designing a <strong>mycelium server stack</strong> that could operate on a farm or in a climate-controlled growing space. Rather than positioning a single invention as a solution, the project maps the emerging global landscape — cataloguing innovations across universities and companies in the UK, US, Italy, Canada, Australia, and the Netherlands — and evaluates each against three criteria: <strong>data storage capability</strong>, <strong>energy consumption</strong>, and <strong>compatibility with regenerative farming and CO₂ reduction</strong>. The British Mycological Society serves as the primary peer-review and knowledge-dissemination body underpinning this entire field. Drawing on these comparisons, the project works toward a speculative design for a server architecture that is <strong>grown, not manufactured</strong> — one that could live symbiotically within agricultural infrastructure, consume minimal energy, and decompose harmlessly at the end of its lifecycle.
+      </div>
+      <ul class="home-tags" aria-label="Research topics">
+        <li class="home-tag">Bioelectronics</li>
+        <li class="home-tag">Neuromorphic</li>
+        <li class="home-tag">Data Storage</li>
+        <li class="home-tag">Regenerative Farming</li>
+        <li class="home-tag">Speculative Design</li>
+        <li class="home-tag">CO₂ Reduction</li>
+      </ul>
+    </section>
+    <div class="home-right" aria-hidden="true">
+      <div id="server-preview-wrap" role="presentation">
+        <svg id="server-preview-svg" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg"
+             aria-hidden="true" focusable="false">
+          <!-- Populated by generateStackSVG() on page load -->
+        </svg>
+      </div>
+    </div>
+  </main>
+  <footer class="site-footer" role="contentinfo">
+    This site was created by Ashlee Conery — Co-author of
+    <a href="https://schoolofcommons.org/making-public/issues/2024/equilibrium-mycoprocessing-emp"
+       target="_blank" rel="noopener noreferrer"
+       aria-label="Equilibrium MycoProcessing (EMP) — opens in new tab">
+      Equilibrium MycoProcessing (EMP)
+    </a>
+  </footer>
+</div>
+
+<!-- PAGE 2: DATABASE -->
+<div id="page-database" class="page" role="region" aria-label="Invention database page">
+  <main id="main-content-database" aria-labelledby="db-heading">
+  <div style="padding: 2rem 5rem 5rem;">
+    <header class="page-header">
+      <p class="page-eyebrow" aria-hidden="true">Global Research Index</p>
+      <h2 id="db-heading" class="page-title">Mycelium Invention Database</h2>
+      <p class="page-desc">A living database of mycelium-based biotechnology inventions relevant to biological data storage, circuit substrates, bio-computing, fungal robotics, plant/mycelium impedance sensing, and natural communication research. Updated every Friday by automated web search across six query categories.</p>
+    </header>
+
+    <div class="scraper-bar" role="status" aria-live="polite" aria-atomic="false">
+      <div class="scraper-dot" aria-hidden="true"></div>
+      <div class="scraper-text">
+        Web scraper active — next scheduled run: <span id="next-scrape-date"></span> &nbsp;|&nbsp; Last update: <span id="last-scrape-date">Initializing…</span>
+      </div>
+      <span id="scraper-status" aria-live="assertive">Idle</span>
+      <button class="btn-scrape" onclick="runScraper()" aria-label="Run web scraper now to search for new mycelium research">
+        &#9654; Run Now
+      </button>
+    </div>
+
+    <div class="filter-row" role="group" aria-label="Filter database by region">
+      <button class="filter-chip active" onclick="filterTable('all',this)" aria-pressed="true">All regions</button>
+      <button class="filter-chip" onclick="filterTable('UK',this)" aria-pressed="false">UK</button>
+      <button class="filter-chip" onclick="filterTable('USA',this)" aria-pressed="false">USA</button>
+      <button class="filter-chip" onclick="filterTable('Italy',this)" aria-pressed="false">Italy</button>
+      <button class="filter-chip" onclick="filterTable('Netherlands',this)" aria-pressed="false">Netherlands</button>
+      <button class="filter-chip" onclick="filterTable('Canada',this)" aria-pressed="false">Canada</button>
+      <button class="filter-chip" onclick="filterTable('Australia',this)" aria-pressed="false">Australia / Austria</button>
+    </div>
+
+    <div class="filter-row" role="group" aria-label="Filter database by invention role">
+      <button class="filter-chip-role active" onclick="filterByRole('all',this)" aria-pressed="true">All roles</button>
+      <button class="filter-chip-role" onclick="filterByRole('storage',this)" aria-pressed="false">Storage</button>
+      <button class="filter-chip-role" onclick="filterByRole('computing',this)" aria-pressed="false">Computing</button>
+      <button class="filter-chip-role" onclick="filterByRole('robotics',this)" aria-pressed="false">Robotics</button>
+      <button class="filter-chip-role" onclick="filterByRole('sensing',this)" aria-pressed="false">Sensing</button>
+      <button class="filter-chip-role" onclick="filterByRole('interface',this)" aria-pressed="false">Interface</button>
+      <button class="filter-chip-role" onclick="filterByRole('substrate',this)" aria-pressed="false">Substrate</button>
+      <button class="filter-chip-role" onclick="filterByRole('institution',this)" aria-pressed="false">Institution</button>
+      <button class="filter-chip-role" onclick="filterByRole('research',this)" aria-pressed="false">Research</button>
+    </div>
+
+    <div class="db-table-wrap" tabindex="0" role="region" aria-label="Scrollable invention data table">
+      <table class="db-table" id="db-table">
+        <caption>Mycelium biotechnology inventions — sortable by clicking column headers. Press Enter or Space to activate sort.</caption>
+        <thead>
+          <tr>
+            <th scope="col" onclick="sortTable('name')" onkeydown="if(event.key==='Enter'||event.key===' '){sortTable('name')}" tabindex="0" aria-sort="none">Invention</th>
+            <th scope="col" onclick="sortTable('org')" onkeydown="if(event.key==='Enter'||event.key===' '){sortTable('org')}" tabindex="0" aria-sort="none">Institution / Company</th>
+            <th scope="col" onclick="sortTable('region')" onkeydown="if(event.key==='Enter'||event.key===' '){sortTable('region')}" tabindex="0" aria-sort="none">Region</th>
+            <th scope="col" onclick="sortTable('role')" onkeydown="if(event.key==='Enter'||event.key===' '){sortTable('role')}" tabindex="0" aria-sort="none">Role</th>
+            <th scope="col" onclick="sortTable('storage')" onkeydown="if(event.key==='Enter'||event.key===' '){sortTable('storage')}" tabindex="0" aria-sort="none">Storage</th>
+            <th scope="col" onclick="sortTable('energy')" onkeydown="if(event.key==='Enter'||event.key===' '){sortTable('energy')}" tabindex="0" aria-sort="none">Energy</th>
+            <th scope="col" onclick="sortTable('farm')" onkeydown="if(event.key==='Enter'||event.key===' '){sortTable('farm')}" tabindex="0" aria-sort="none">Farm/CO₂</th>
+            <th scope="col">Notes</th>
+            <th scope="col" onclick="sortTable('year')" onkeydown="if(event.key==='Enter'||event.key===' '){sortTable('year')}" tabindex="0" aria-sort="descending">Year</th>
+          </tr>
+        </thead>
+        <tbody id="db-tbody" aria-live="polite" aria-relevant="additions removals"></tbody>
+      </table>
+    </div>
+  </div>
+  </main>
+  <footer class="site-footer" role="contentinfo">
+    This site was created by Ashlee Conery — Co-author of
+    <a href="https://schoolofcommons.org/making-public/issues/2024/equilibrium-mycoprocessing-emp"
+       target="_blank" rel="noopener noreferrer"
+       aria-label="Equilibrium MycoProcessing (EMP) — opens in new tab">
+      Equilibrium MycoProcessing (EMP)
+    </a>
+  </footer>
+</div>
+
+<!-- PAGE 3: SPECULATIVE DESIGN -->
+<div id="page-design" class="page" role="region" aria-label="Speculative design page">
+  <main id="main-content-design" class="design-layout" aria-labelledby="design-heading">
+    <article class="design-main">
+      <p class="page-eyebrow" aria-hidden="true">Generative Speculation — Updated with Database</p>
+      <h2 id="design-heading" class="page-title">Mycelium Server Stack</h2>
+      <p class="page-desc" style="margin-bottom:0">The Speculative Design page reads every entry in the database and selects the best-scoring invention for each functional role — storage, computing, interface, substrate, sensing — using the combined score of all three criteria (data storage + energy + farm compatibility). Each selected invention becomes a labelled component in the stack diagram. Components drawn from real database entries are drawn in <span style="color:var(--orange)" aria-label="orange">orange</span>; components that don&#39;t yet have a real invention behind them are drawn in <span style="color:var(--purple)" aria-label="purple">purple</span> with a note that they&#39;re speculative or still need to be invented. Dashed lines mark connections between components that haven&#39;t been solved yet. As the scraper adds new entries every Friday, the diagram regenerates — if a better-scoring invention appears in any role, it automatically replaces the previous component. The gallery sidebar captures a snapshot every Friday before and after the update so you can see how the design evolves week by week.</p>
+
+      <ul class="design-legend" aria-label="Diagram colour legend" style="list-style:none">
+        <li class="legend-item"><div class="legend-swatch ls-orange" aria-hidden="true"></div>From database (existing research)</li>
+        <li class="legend-item"><div class="legend-swatch ls-purple" aria-hidden="true"></div>Speculative / uninvented</li>
+        <li class="legend-item"><div class="legend-swatch ls-dashed" aria-hidden="true"></div>Unsolved interface</li>
+      </ul>
+
+      <div id="stack-svg-wrap" role="img" aria-label="Mycelium server stack diagram — a line drawing showing layers of the speculative server architecture from agricultural substrate feed at the bottom through organic RAM, bio-electronic interface, neuromorphic processor, biodegradable PCB, nutrient loop, and enclosure at the top. Orange components exist in research; purple components are speculative.">
+        <svg id="stack-svg" viewBox="0 0 820 960" xmlns="http://www.w3.org/2000/svg"
+             style="background:transparent" aria-hidden="true" focusable="false">
+          <!-- Generated by JS -->
+        </svg>
+      </div>
+
+      <div class="design-notes" id="design-notes" aria-live="polite"></div>
+    </article>
+
+    <aside class="gallery-sidebar" aria-labelledby="gallery-heading">
+      <h3 id="gallery-heading" class="gallery-title">Weekly Design Archive<br>Screenshots — Fridays</h3>
+      <div id="gallery-container" role="list" aria-label="Archived design screenshots">
+        <p class="gallery-empty">No archived designs yet. The first screenshot will be taken this Friday before the weekly database update.</p>
+      </div>
+      <button class="btn-scrape" style="width:100%;margin-top:1rem" onclick="captureScreenshot().then(renderGallery)"
+              aria-label="Capture screenshot of current server stack design">
+        &#128248; Capture Now
+      </button>
+      <button class="btn-scrape" style="width:100%;margin-top:0.5rem;border-color:rgba(176,170,162,0.5);color:var(--muted)"
+              onclick="clearGallery()"
+              aria-label="Clear all screenshots from gallery">
+        &#128465; Clear All Screenshots
+      </button>
+    </aside>
+  </main>
+
+  <section style="padding:2rem 3rem 0 5rem" aria-label="Mycelium electrode tray rig illustration">
+    <h3 style="font-family:'Playfair Display',serif;font-size:1.25rem;color:var(--white);margin-bottom:1rem;font-weight:400">Speculative Storage Infrastructure — To Pair with Farming for -Co₂ Data Storage</h3>
+    <svg width="100%" viewBox="0 0 820 900" role="img" style="max-width:780px;display:block" aria-label="Line drawing of solar-powered electrode tray rig with plants and mycelium">
+      <title>Mycelium electrode tray rig</title>
+      <desc>A white line drawing showing a central vertical bar with wide plant-growing trays radiating outward on both sides. Each tray contains plants and mycelium networks in the substrate, with thin glass micropipette electrodes. Fine wires lead from each electrode up the central bar to a solar panel array at the top.</desc>
+      <style>
+        .w{stroke:#f0ede8;fill:none;} .t1{stroke-width:0.7;} .t2{stroke-width:1.1;} .t3{stroke-width:1.6;}
+        .lbl{fill:#f0ede8;font-family:var(--font-sans,sans-serif);font-size:12px;}
+        .lbl-sm{fill:#b0aaa2;font-family:var(--font-sans,sans-serif);font-size:10.5px;}
+      </style>
+      <!-- Solar panel -->
+      <rect class="w t2" x="290" y="22" width="240" height="82" rx="3"/>
+      <line class="w t1" x1="350" y1="22" x2="350" y2="104"/> <line class="w t1" x1="410" y1="22" x2="410" y2="104"/> <line class="w t1" x1="470" y1="22" x2="470" y2="104"/>
+      <line class="w t1" x1="290" y1="55" x2="530" y2="55"/> <line class="w t1" x1="290" y1="80" x2="530" y2="80"/>
+      <line class="w t1" x1="292" y1="24" x2="348" y2="53" stroke-opacity="0.28"/> <line class="w t1" x1="292" y1="57" x2="348" y2="78" stroke-opacity="0.28"/> <line class="w t1" x1="292" y1="82" x2="348" y2="102" stroke-opacity="0.28"/>
+      <line class="w t1" x1="352" y1="24" x2="408" y2="53" stroke-opacity="0.28"/> <line class="w t1" x1="352" y1="57" x2="408" y2="78" stroke-opacity="0.28"/> <line class="w t1" x1="352" y1="82" x2="408" y2="102" stroke-opacity="0.28"/>
+      <line class="w t1" x1="412" y1="24" x2="468" y2="53" stroke-opacity="0.28"/> <line class="w t1" x1="412" y1="57" x2="468" y2="78" stroke-opacity="0.28"/> <line class="w t1" x1="412" y1="82" x2="468" y2="102" stroke-opacity="0.28"/>
+      <line class="w t1" x1="472" y1="24" x2="528" y2="53" stroke-opacity="0.28"/> <line class="w t1" x1="472" y1="57" x2="528" y2="78" stroke-opacity="0.28"/> <line class="w t1" x1="472" y1="82" x2="528" y2="102" stroke-opacity="0.28"/>
+      <line class="w t2" x1="410" y1="104" x2="410" y2="126"/>
+      <text class="lbl" x="410" y="14" text-anchor="middle">solar panel array</text>
+      <!-- Central bar -->
+      <rect class="w t2" x="402" y="126" width="16" height="726" rx="2"/>
+      <line class="w t1" x1="399" y1="126" x2="399" y2="850" stroke-opacity="0.4"/> <line class="w t1" x1="397" y1="126" x2="397" y2="850" stroke-opacity="0.22"/>
+      <line class="w t1" x1="402" y1="228" x2="418" y2="228"/> <line class="w t1" x1="402" y1="382" x2="418" y2="382"/> <line class="w t1" x1="402" y1="536" x2="418" y2="536"/> <line class="w t1" x1="402" y1="690" x2="418" y2="690"/>
+      <!-- ── TRAY ROW 1 y=230 ── -->
+      <!-- Left arm + wide tray (100px wide = roughly half 230px arm) -->
+      <line class="w t2" x1="402" y1="230" x2="172" y2="230"/>
+      <rect class="w t2" x="222" y="213" width="100" height="36" rx="2"/>
+      <line class="w t1" x1="224" y1="236" x2="320" y2="236" stroke-opacity="0.35"/>
+      <!-- Mycelium in left tray 1 -->
+      <path class="w t1" d="M232 236 Q237 227 246 224 Q241 230 252 227 Q248 233 258 229 Q255 235 266 231 Q262 236 274 232" stroke-opacity="0.55"/>
+      <path class="w t1" d="M278 236 Q283 228 292 225 Q288 231 299 228 Q295 234 306 230 Q302 235 314 231" stroke-opacity="0.55"/>
+      <!-- Root suggestions (mycelium going down) -->
+      <path class="w t1" d="M252 236 Q250 242 245 246 Q254 241 252 236" stroke-opacity="0.3"/>
+      <path class="w t1" d="M290 236 Q292 244 298 248 Q289 242 290 236" stroke-opacity="0.3"/>
+      <!-- Plants (2 stems) -->
+      <line class="w t1" x1="257" y1="213" x2="257" y2="188"/> <line class="w t1" x1="292" y1="213" x2="292" y2="186"/>
+      <path class="w t1" d="M257 205 Q243 196 236 190 Q246 194 257 205"/> <path class="w t1" d="M257 205 Q271 196 278 190 Q268 194 257 205"/>
+      <path class="w t1" d="M257 196 Q246 188 239 183 Q249 187 257 196"/> <path class="w t1" d="M257 196 Q268 188 275 183 Q265 187 257 196"/>
+      <path class="w t1" d="M292 203 Q278 194 271 188 Q281 192 292 203"/> <path class="w t1" d="M292 203 Q306 194 313 188 Q303 192 292 203"/>
+      <path class="w t1" d="M292 194 Q281 186 274 181 Q284 185 292 194"/> <path class="w t1" d="M292 194 Q303 186 310 181 Q300 185 292 194"/>
+      <!-- Electrodes -->
+      <line class="w t1" x1="238" y1="213" x2="228" y2="196"/> <line class="w t1" x1="228" y1="196" x2="227.2" y2="193"/>
+      <line class="w t1" x1="314" y1="213" x2="324" y2="196"/> <line class="w t1" x1="324" y1="196" x2="324.8" y2="193"/>
+      <!-- Wires to spine -->
+      <path class="w t1" d="M227 196 Q200 188 200 228 Q200 262 222 232 Q330 224 399 220" stroke-opacity="0.55"/>
+      <path class="w t1" d="M325 196 Q352 188 352 213 Q336 218 399 219" stroke-opacity="0.55"/>
+      <!-- Right arm + wide tray -->
+      <line class="w t2" x1="418" y1="230" x2="648" y2="230"/>
+      <rect class="w t2" x="498" y="213" width="100" height="36" rx="2"/>
+      <line class="w t1" x1="500" y1="236" x2="596" y2="236" stroke-opacity="0.35"/>
+      <path class="w t1" d="M508 236 Q513 227 522 224 Q517 230 528 227 Q524 233 534 229 Q531 235 542 231 Q538 236 550 232" stroke-opacity="0.55"/>
+      <path class="w t1" d="M554 236 Q559 228 568 225 Q564 231 575 228 Q571 234 582 230 Q578 235 590 231" stroke-opacity="0.55"/>
+      <path class="w t1" d="M528 236 Q526 242 521 246 Q530 241 528 236" stroke-opacity="0.3"/>
+      <path class="w t1" d="M566 236 Q568 244 574 248 Q565 242 566 236" stroke-opacity="0.3"/>
+      <line class="w t1" x1="533" y1="213" x2="533" y2="188"/> <line class="w t1" x1="568" y1="213" x2="568" y2="186"/>
+      <path class="w t1" d="M533 205 Q519 196 512 190 Q522 194 533 205"/> <path class="w t1" d="M533 205 Q547 196 554 190 Q544 194 533 205"/>
+      <path class="w t1" d="M533 196 Q522 188 515 183 Q525 187 533 196"/> <path class="w t1" d="M533 196 Q544 188 551 183 Q541 187 533 196"/>
+      <path class="w t1" d="M568 203 Q554 194 547 188 Q557 192 568 203"/> <path class="w t1" d="M568 203 Q582 194 589 188 Q579 192 568 203"/>
+      <path class="w t1" d="M568 194 Q557 186 550 181 Q560 185 568 194"/> <path class="w t1" d="M568 194 Q579 186 586 181 Q576 185 568 194"/>
+      <line class="w t1" x1="514" y1="213" x2="504" y2="196"/> <line class="w t1" x1="504" y1="196" x2="503.2" y2="193"/>
+      <line class="w t1" x1="590" y1="213" x2="600" y2="196"/> <line class="w t1" x1="600" y1="196" x2="600.8" y2="193"/>
+      <path class="w t1" d="M504 196 Q477 188 477 213 Q419 218 419 219" stroke-opacity="0.55"/>
+      <path class="w t1" d="M601 196 Q628 186 631 230 Q631 264 600 234 Q492 224 419 220" stroke-opacity="0.55"/>
+      <!-- ── TRAY ROW 2 y=384 ── -->
+      <line class="w t2" x1="402" y1="384" x2="162" y2="384"/>
+      <rect class="w t2" x="212" y="367" width="100" height="36" rx="2"/>
+      <line class="w t1" x1="214" y1="390" x2="310" y2="390" stroke-opacity="0.35"/>
+      <path class="w t1" d="M222 390 Q227 381 236 378 Q231 384 242 381 Q238 387 248 383 Q245 389 256 385 Q252 390 264 386" stroke-opacity="0.55"/>
+      <path class="w t1" d="M268 390 Q273 382 282 379 Q278 385 289 382 Q285 388 296 384 Q292 389 304 385" stroke-opacity="0.55"/>
+      <path class="w t1" d="M242 390 Q240 396 235 400 Q244 395 242 390" stroke-opacity="0.3"/>
+      <path class="w t1" d="M280 390 Q282 398 288 402 Q279 396 280 390" stroke-opacity="0.3"/>
+      <line class="w t1" x1="247" y1="367" x2="247" y2="342"/> <line class="w t1" x1="282" y1="367" x2="282" y2="340"/>
+      <path class="w t1" d="M247 359 Q233 350 226 344 Q236 348 247 359"/> <path class="w t1" d="M247 359 Q261 350 268 344 Q258 348 247 359"/>
+      <path class="w t1" d="M247 350 Q236 342 229 337 Q239 341 247 350"/> <path class="w t1" d="M247 350 Q258 342 265 337 Q255 341 247 350"/>
+      <path class="w t1" d="M282 357 Q268 348 261 342 Q271 346 282 357"/> <path class="w t1" d="M282 357 Q296 348 303 342 Q293 346 282 357"/>
+      <path class="w t1" d="M282 348 Q271 340 264 335 Q274 339 282 348"/> <path class="w t1" d="M282 348 Q293 340 300 335 Q290 339 282 348"/>
+      <line class="w t1" x1="228" y1="367" x2="218" y2="350"/> <line class="w t1" x1="218" y1="350" x2="217.2" y2="347"/>
+      <line class="w t1" x1="304" y1="367" x2="314" y2="350"/> <line class="w t1" x1="314" y1="350" x2="314.8" y2="347"/>
+      <path class="w t1" d="M217 350 Q190 342 190 382 Q190 416 212 388 Q320 378 399 374" stroke-opacity="0.55"/>
+      <path class="w t1" d="M315 350 Q342 342 342 367 Q326 372 399 373" stroke-opacity="0.55"/>
+      <line class="w t2" x1="418" y1="384" x2="658" y2="384"/>
+      <rect class="w t2" x="508" y="367" width="100" height="36" rx="2"/>
+      <line class="w t1" x1="510" y1="390" x2="606" y2="390" stroke-opacity="0.35"/>
+      <path class="w t1" d="M518 390 Q523 381 532 378 Q527 384 538 381 Q534 387 544 383 Q541 389 552 385 Q548 390 560 386" stroke-opacity="0.55"/>
+      <path class="w t1" d="M564 390 Q569 382 578 379 Q574 385 585 382 Q581 388 592 384 Q588 389 600 385" stroke-opacity="0.55"/>
+      <path class="w t1" d="M538 390 Q536 396 531 400 Q540 395 538 390" stroke-opacity="0.3"/>
+      <path class="w t1" d="M576 390 Q578 398 584 402 Q575 396 576 390" stroke-opacity="0.3"/>
+      <line class="w t1" x1="543" y1="367" x2="543" y2="342"/> <line class="w t1" x1="578" y1="367" x2="578" y2="340"/>
+      <path class="w t1" d="M543 359 Q529 350 522 344 Q532 348 543 359"/> <path class="w t1" d="M543 359 Q557 350 564 344 Q554 348 543 359"/>
+      <path class="w t1" d="M543 350 Q532 342 525 337 Q535 341 543 350"/> <path class="w t1" d="M543 350 Q554 342 561 337 Q551 341 543 350"/>
+      <path class="w t1" d="M578 357 Q564 348 557 342 Q567 346 578 357"/> <path class="w t1" d="M578 357 Q592 348 599 342 Q589 346 578 357"/>
+      <path class="w t1" d="M578 348 Q567 340 560 335 Q570 339 578 348"/> <path class="w t1" d="M578 348 Q589 340 596 335 Q586 339 578 348"/>
+      <line class="w t1" x1="524" y1="367" x2="514" y2="350"/> <line class="w t1" x1="514" y1="350" x2="513.2" y2="347"/>
+      <line class="w t1" x1="600" y1="367" x2="610" y2="350"/> <line class="w t1" x1="610" y1="350" x2="610.8" y2="347"/>
+      <path class="w t1" d="M514 350 Q487 342 487 367 Q419 372 419 373" stroke-opacity="0.55"/>
+      <path class="w t1" d="M611 350 Q638 340 641 384 Q641 418 610 390 Q502 378 419 374" stroke-opacity="0.55"/>
+      <!-- ── TRAY ROW 3 y=538 ── -->
+      <line class="w t2" x1="402" y1="538" x2="172" y2="538"/>
+      <rect class="w t2" x="222" y="521" width="100" height="36" rx="2"/>
+      <line class="w t1" x1="224" y1="544" x2="320" y2="544" stroke-opacity="0.35"/>
+      <path class="w t1" d="M232 544 Q237 535 246 532 Q241 538 252 535 Q248 541 258 537 Q255 543 266 539 Q262 544 274 540" stroke-opacity="0.55"/>
+      <path class="w t1" d="M278 544 Q283 536 292 533 Q288 539 299 536 Q295 542 306 538 Q302 543 314 539" stroke-opacity="0.55"/>
+      <path class="w t1" d="M252 544 Q250 550 245 554 Q254 549 252 544" stroke-opacity="0.3"/>
+      <path class="w t1" d="M290 544 Q292 552 298 556 Q289 550 290 544" stroke-opacity="0.3"/>
+      <line class="w t1" x1="257" y1="521" x2="257" y2="496"/> <line class="w t1" x1="292" y1="521" x2="292" y2="494"/>
+      <path class="w t1" d="M257 513 Q243 504 236 498 Q246 502 257 513"/> <path class="w t1" d="M257 513 Q271 504 278 498 Q268 502 257 513"/>
+      <path class="w t1" d="M257 504 Q246 496 239 491 Q249 495 257 504"/> <path class="w t1" d="M257 504 Q268 496 275 491 Q265 495 257 504"/>
+      <path class="w t1" d="M292 511 Q278 502 271 496 Q281 500 292 511"/> <path class="w t1" d="M292 511 Q306 502 313 496 Q303 500 292 511"/>
+      <path class="w t1" d="M292 502 Q281 494 274 489 Q284 493 292 502"/> <path class="w t1" d="M292 502 Q303 494 310 489 Q300 493 292 502"/>
+      <line class="w t1" x1="238" y1="521" x2="228" y2="504"/> <line class="w t1" x1="228" y1="504" x2="227.2" y2="501"/>
+      <line class="w t1" x1="314" y1="521" x2="324" y2="504"/> <line class="w t1" x1="324" y1="504" x2="324.8" y2="501"/>
+      <path class="w t1" d="M227 504 Q200 496 200 536 Q200 570 222 540 Q330 532 399 528" stroke-opacity="0.55"/>
+      <path class="w t1" d="M325 504 Q352 496 352 521 Q336 526 399 527" stroke-opacity="0.55"/>
+      <line class="w t2" x1="418" y1="538" x2="648" y2="538"/>
+      <rect class="w t2" x="498" y="521" width="100" height="36" rx="2"/>
+      <line class="w t1" x1="500" y1="544" x2="596" y2="544" stroke-opacity="0.35"/>
+      <path class="w t1" d="M508 544 Q513 535 522 532 Q517 538 528 535 Q524 541 534 537 Q531 543 542 539 Q538 544 550 540" stroke-opacity="0.55"/>
+      <path class="w t1" d="M554 544 Q559 536 568 533 Q564 539 575 536 Q571 542 582 538 Q578 543 590 539" stroke-opacity="0.55"/>
+      <path class="w t1" d="M528 544 Q526 550 521 554 Q530 549 528 544" stroke-opacity="0.3"/>
+      <path class="w t1" d="M566 544 Q568 552 574 556 Q565 550 566 544" stroke-opacity="0.3"/>
+      <line class="w t1" x1="533" y1="521" x2="533" y2="496"/> <line class="w t1" x1="568" y1="521" x2="568" y2="494"/>
+      <path class="w t1" d="M533 513 Q519 504 512 498 Q522 502 533 513"/> <path class="w t1" d="M533 513 Q547 504 554 498 Q544 502 533 513"/>
+      <path class="w t1" d="M533 504 Q522 496 515 491 Q525 495 533 504"/> <path class="w t1" d="M533 504 Q544 496 551 491 Q541 495 533 504"/>
+      <path class="w t1" d="M568 511 Q554 502 547 496 Q557 500 568 511"/> <path class="w t1" d="M568 511 Q582 502 589 496 Q579 500 568 511"/>
+      <path class="w t1" d="M568 502 Q557 494 550 489 Q560 493 568 502"/> <path class="w t1" d="M568 502 Q579 494 586 489 Q576 493 568 502"/>
+      <line class="w t1" x1="514" y1="521" x2="504" y2="504"/> <line class="w t1" x1="504" y1="504" x2="503.2" y2="501"/>
+      <line class="w t1" x1="590" y1="521" x2="600" y2="504"/> <line class="w t1" x1="600" y1="504" x2="600.8" y2="501"/>
+      <path class="w t1" d="M504 504 Q477 496 477 521 Q419 526 419 527" stroke-opacity="0.55"/>
+      <path class="w t1" d="M601 504 Q628 494 631 538 Q631 572 600 542 Q492 532 419 528" stroke-opacity="0.55"/>
+      <!-- ── TRAY ROW 4 y=692 ── -->
+      <line class="w t2" x1="402" y1="692" x2="172" y2="692"/>
+      <rect class="w t2" x="222" y="675" width="100" height="36" rx="2"/>
+      <line class="w t1" x1="224" y1="698" x2="320" y2="698" stroke-opacity="0.35"/>
+      <path class="w t1" d="M232 698 Q237 689 246 686 Q241 692 252 689 Q248 695 258 691 Q255 697 266 693 Q262 698 274 694" stroke-opacity="0.55"/>
+      <path class="w t1" d="M278 698 Q283 690 292 687 Q288 693 299 690 Q295 696 306 692 Q302 697 314 693" stroke-opacity="0.55"/>
+      <path class="w t1" d="M252 698 Q250 704 245 708 Q254 703 252 698" stroke-opacity="0.3"/>
+      <path class="w t1" d="M290 698 Q292 706 298 710 Q289 704 290 698" stroke-opacity="0.3"/>
+      <line class="w t1" x1="257" y1="675" x2="257" y2="650"/> <line class="w t1" x1="292" y1="675" x2="292" y2="648"/>
+      <path class="w t1" d="M257 667 Q243 658 236 652 Q246 656 257 667"/> <path class="w t1" d="M257 667 Q271 658 278 652 Q268 656 257 667"/>
+      <path class="w t1" d="M257 658 Q246 650 239 645 Q249 649 257 658"/> <path class="w t1" d="M257 658 Q268 650 275 645 Q265 649 257 658"/>
+      <path class="w t1" d="M292 665 Q278 656 271 650 Q281 654 292 665"/> <path class="w t1" d="M292 665 Q306 656 313 650 Q303 654 292 665"/>
+      <path class="w t1" d="M292 656 Q281 648 274 643 Q284 647 292 656"/> <path class="w t1" d="M292 656 Q303 648 310 643 Q300 647 292 656"/>
+      <line class="w t1" x1="238" y1="675" x2="228" y2="658"/> <line class="w t1" x1="228" y1="658" x2="227.2" y2="655"/>
+      <line class="w t1" x1="314" y1="675" x2="324" y2="658"/> <line class="w t1" x1="324" y1="658" x2="324.8" y2="655"/>
+      <path class="w t1" d="M227 658 Q200 650 200 690 Q200 724 222 694 Q330 686 399 682" stroke-opacity="0.55"/>
+      <path class="w t1" d="M325 658 Q352 650 352 675 Q336 680 399 681" stroke-opacity="0.55"/>
+      <line class="w t2" x1="418" y1="692" x2="648" y2="692"/>
+      <rect class="w t2" x="498" y="675" width="100" height="36" rx="2"/>
+      <line class="w t1" x1="500" y1="698" x2="596" y2="698" stroke-opacity="0.35"/>
+      <path class="w t1" d="M508 698 Q513 689 522 686 Q517 692 528 689 Q524 695 534 691 Q531 697 542 693 Q538 698 550 694" stroke-opacity="0.55"/>
+      <path class="w t1" d="M554 698 Q559 690 568 687 Q564 693 575 690 Q571 696 582 692 Q578 697 590 693" stroke-opacity="0.55"/>
+      <path class="w t1" d="M528 698 Q526 704 521 708 Q530 703 528 698" stroke-opacity="0.3"/>
+      <path class="w t1" d="M566 698 Q568 706 574 710 Q565 704 566 698" stroke-opacity="0.3"/>
+      <line class="w t1" x1="533" y1="675" x2="533" y2="650"/> <line class="w t1" x1="568" y1="675" x2="568" y2="648"/>
+      <path class="w t1" d="M533 667 Q519 658 512 652 Q522 656 533 667"/> <path class="w t1" d="M533 667 Q547 658 554 652 Q544 656 533 667"/>
+      <path class="w t1" d="M533 658 Q522 650 515 645 Q525 649 533 658"/> <path class="w t1" d="M533 658 Q544 650 551 645 Q541 649 533 658"/>
+      <path class="w t1" d="M568 665 Q554 656 547 650 Q557 654 568 665"/> <path class="w t1" d="M568 665 Q582 656 589 650 Q579 654 568 665"/>
+      <path class="w t1" d="M568 656 Q557 648 550 643 Q560 647 568 656"/> <path class="w t1" d="M568 656 Q579 648 586 643 Q576 647 568 656"/>
+      <line class="w t1" x1="514" y1="675" x2="504" y2="658"/> <line class="w t1" x1="504" y1="658" x2="503.2" y2="655"/>
+      <line class="w t1" x1="590" y1="675" x2="600" y2="658"/> <line class="w t1" x1="600" y1="658" x2="600.8" y2="655"/>
+      <path class="w t1" d="M504 658 Q477 650 477 675 Q419 680 419 681" stroke-opacity="0.55"/>
+      <path class="w t1" d="M601 658 Q628 648 631 692 Q631 726 600 696 Q492 686 419 682" stroke-opacity="0.55"/>
+      <!-- Base -->
+      <line class="w t2" x1="388" y1="852" x2="432" y2="852"/>
+      <line class="w t1" x1="378" y1="859" x2="442" y2="859"/>
+      <!-- Annotations -->
+      <line class="w t1" x1="530" y1="64" x2="680" y2="44" stroke-opacity="0.38"/>
+      <text class="lbl-sm" x="684" y="48">solar panel</text>
+      <line class="w t1" x1="324.8" y1="193" x2="680" y2="172" stroke-opacity="0.38"/>
+      <text class="lbl-sm" x="684" y="176">glass micropipette electrode</text>
+      <line class="w t1" x1="418" y1="244" x2="680" y2="244" stroke-opacity="0.38"/>
+      <text class="lbl-sm" x="684" y="248">arm + tray</text>
+      <line class="w t1" x1="320" y1="390" x2="680" y2="390" stroke-opacity="0.38"/>
+      <text class="lbl-sm" x="684" y="394">mycelium network</text>
+      <line class="w t1" x1="418" y1="460" x2="680" y2="460" stroke-opacity="0.38"/>
+      <text class="lbl-sm" x="684" y="464">central bar</text>
+      <line class="w t1" x1="397" y1="600" x2="680" y2="600" stroke-opacity="0.38"/>
+      <text class="lbl-sm" x="684" y="604">wire bundle</text>
+      <line class="w t1" x1="432" y1="852" x2="680" y2="852" stroke-opacity="0.38"/>
+      <text class="lbl-sm" x="684" y="856">base mount</text>
+    </svg>
+  </section>
+
+  <footer class="site-footer" role="contentinfo">
+    This site was created by Ashlee Conery — Co-author of
+    <a href="https://schoolofcommons.org/making-public/issues/2024/equilibrium-mycoprocessing-emp"
+       target="_blank" rel="noopener noreferrer"
+       aria-label="Equilibrium MycoProcessing (EMP) — opens in new tab">
+      Equilibrium MycoProcessing (EMP)
+    </a>
+  </footer>
+</div>
+
+<!-- html2canvas for screenshots -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════════
+// DATA — Invention database (seed data)
+// ═══════════════════════════════════════════════════
+const DB_KEY = 'mycelium_db_v7';
+const SCREENSHOTS_KEY = 'mycelium_screenshots';
+const LAST_SCRAPE_KEY = 'mycelium_last_scrape';
+
+const SEED_DATA = [
+  {
+    id: 'adamatzky-uce',
+    name: 'Fungal Logic Gates & Fungal Electronics Suite',
+    org: 'Unconventional Computing Lab, UWE Bristol',
+    region: 'UK',
+    storage: 3, energy: 3, farm: 3,
+    role: 'computing',
+    year: 2021,
+    notes: 'AND/OR/AND-NOT Boolean gates. Fungal oscillators, chemical/photosensors, memristors from pure mycelium. Nanoparticle micro-wire hybrid (permanent bio-electronic substrate). Fungal language: spiking distributions match human language statistics. Reactive wearables. FUNGAR EU Horizon 2020 project.',
+    isNew: false
+  },
+  {
+    id: 'bms-uk',
+    name: 'British Mycological Society — Research & Publication Network',
+    org: 'British Mycological Society',
+    region: 'UK',
+    storage: 1, energy: 1, farm: 3,
+    role: 'institution',
+    year: 1896,
+    notes: 'Peer-review backbone for all fungal computing research. Journals: Fungal Biology, Fungal Ecology, Fungal Biology Reviews, Field Mycology. Manages FRDBI (1.5M+ records). Funds research grants and fellowships.',
+    isNew: false
+  },
+  {
+    id: 'osu-mushristor',
+    name: 'Shiitake Mushristor (Organic RAM)',
+    org: 'Ohio State University',
+    region: 'USA',
+    storage: 3, energy: 3, farm: 3,
+    role: 'storage',
+    year: 2025,
+    notes: 'Dried shiitake mycelium as organic memristor RAM. 5,850 Hz / 90% accuracy. Retains state when dehydrated. Radiation-resistant. Funded by Honda Research Institute (PLOS One 2025).',
+    isNew: false
+  },
+  {
+    id: 'mycosoft-fci',
+    name: 'Fungal Computer Interface (FCI) + NatureOS',
+    org: 'Mycosoft Inc.',
+    region: 'USA',
+    storage: 2, energy: 3, farm: 3,
+    role: 'interface',
+    year: 2022,
+    notes: 'Open-source bio-computing stack: Mushroom 1 (ECG sensor), SporeBase (CO₂/humidity/temp + carbon credits), Petraeus (HDMEA bio-computing device), NatureOS cloud OS, Hypha Programming Language (HPL). San Diego, CA.',
+    isNew: false
+  },
+  {
+    id: 'cornell-mycoelectronics',
+    name: 'Bioprinted Living Fungal Bioelectronics',
+    org: 'Cornell University',
+    region: 'USA',
+    storage: 1, energy: 2, farm: 2,
+    role: 'sensing',
+    year: 2025,
+    notes: 'Living mycelium 3D-printed as self-healing thermal sensors. Heat-induced vacuole remodelling modulates ionic transport. Hybrid bioelectronic reflex arc. Biohybrid robots with mycelium sensors. bioRxiv 2025.',
+    isNew: false
+  },
+  {
+    id: 'ecovative-mycobond',
+    name: 'MycoBond Composite Materials',
+    org: 'Ecovative Design',
+    region: 'USA',
+    storage: 0, energy: 3, farm: 3,
+    role: 'substrate',
+    year: 2007,
+    notes: 'Agricultural waste bound by fungal mycelium → biodegradable foam, packaging, structural panels. Commercially scaled globally. Server enclosure and insulation layer for farm stack.',
+    isNew: false
+  },
+  {
+    id: 'mogu-sqim',
+    name: 'MOGU / SQIM Fermented Mycelium Panels',
+    org: 'MOGU / SQIM',
+    region: 'Italy',
+    storage: 0, energy: 3, farm: 3,
+    role: 'substrate',
+    year: 2015,
+    notes: 'First commercial EU mycelium product line. Acoustic panels, Ephea leather, 100% biomass sheets grown on agro-industrial waste. FUNGAR partner. €11m Series A (2024). Varese, Italy.',
+    isNew: false
+  },
+  {
+    id: 'utrecht-rc',
+    name: 'Fungal RC Network Logic Modelling',
+    org: 'Utrecht University (Han Wösten Lab)',
+    region: 'Netherlands',
+    storage: 2, energy: 2, farm: 2,
+    role: 'computing',
+    year: 2022,
+    notes: 'AND/OR/AND-NOT gates from real 3D Aspergillus niger colony geometry as RC networks. Theoretical framework for geometry-to-computation translation. FUNGAR project partner.',
+    isNew: false
+  },
+  {
+    id: 'myceliotronics',
+    name: 'Ganoderma Skin Circuit Board (MycelioTronics)',
+    org: 'JKU Linz / MycelioTronics',
+    region: 'Australia',
+    storage: 0, energy: 3, farm: 3,
+    role: 'substrate',
+    year: 2022,
+    notes: 'Ganoderma lucidum skin as biodegradable PCB substrate. Heat-resistant to 200°C, paper-thin, decomposes in soil in ~2 weeks. Replaces FR4 fibreglass. Published in Science Advances.',
+    isNew: false
+  },
+  {
+    id: 'canada-pmm',
+    name: 'Pure Mycelium Materials from Agri-Waste',
+    org: 'University of Guelph / UBC',
+    region: 'Canada',
+    storage: 0, energy: 3, farm: 3,
+    role: 'substrate',
+    year: 2025,
+    notes: 'Trametes versicolor and Irpex lacteus grown on lignocellulosic agricultural processing water. Biodegradable foam (LDPE-comparable density). OMAFA-funded. Strongest closed-loop farm integration.',
+    isNew: false
+  },
+  {
+    id: 'spun-robot-mycorrhizal',
+    name: 'Robotic Mycorrhizal Network Imaging & Nutrient Traffic Mapping',
+    org: 'AMOLF / Vrije Universiteit Amsterdam / SPUN',
+    region: 'Netherlands',
+    storage: 2, energy: 2, farm: 3,
+    role: 'robotics',
+    year: 2025,
+    notes: 'Robot images 40 petri dishes simultaneously 24/7, mapping 500,000+ nodes of mycorrhizal network growth in real-time. Tracks bi-directional nutrient traffic inside fungal tubes. Published in Nature 2025. Led by Dr. Tom Shimizu (AMOLF) with SPUN, Princeton, ENS Lyon.',
+    isNew: false
+  },
+  {
+    id: 'cornell-biohybrid-robot',
+    name: 'Mycelium-Controlled Biohybrid Robots (Sensorimotor Control)',
+    org: 'Cornell University Organic Robotics Lab',
+    region: 'USA',
+    storage: 1, energy: 2, farm: 3,
+    role: 'robotics',
+    year: 2024,
+    notes: 'King oyster mushroom (Pleurotus eryngii) mycelium grown into 3D-printed robot scaffolding. UV light triggers fungal electrical signals that control robot locomotion — walking and wheeled bots. Electromagnetic-shielded mycelium electrical interface. Published in Science Robotics, Aug 2024. Lead: Anand Mishra & Rob Shepherd.',
+    isNew: false
+  },
+  {
+    id: 'adamatzky-fungal-skin-robot',
+    name: 'Fungal Skin for Self-Healing Robot Surfaces',
+    org: 'Unconventional Computing Laboratory, UWE Bristol',
+    region: 'UK',
+    storage: 0, energy: 3, farm: 2,
+    role: 'robotics',
+    year: 2021,
+    notes: 'Prof. Adamatzky\'s lab grew mycelium as a reactive skin layer on robot surfaces — self-healing skin that responds to light and touch via fungal electrical signals. One of 30+ fungal sensing and computing devices developed at UWE. Demonstrates mycelium as a living robotic material.',
+    isNew: false
+  },
+  {
+    id: 'mycelium-soft-robot-actuator',
+    name: 'Mycelium as Soft Robotic Actuator Material',
+    org: 'Multiple — incl. Delft University of Technology, Netherlands',
+    region: 'Netherlands',
+    storage: 0, energy: 3, farm: 3,
+    role: 'robotics',
+    year: 2023,
+    notes: 'Research into using mycelium-bound composites as biodegradable soft robotic actuator material — grown into custom shapes, mycelium composites can flex and respond to moisture and electrical stimulation. Investigated as a sustainable alternative to silicone-based soft actuators.',
+    isNew: false
+  },
+  {
+    id: 'truffle-bot-mycosoft',
+    name: 'TruffleBot — Robotic Fungal Cultivation and Harvesting Assistant',
+    org: 'Mycosoft Inc.',
+    region: 'USA',
+    storage: 0, energy: 2, farm: 3,
+    role: 'robotics',
+    year: 2023,
+    notes: 'Mycosoft\'s TruffleBot is a robotic assistant for fungal cultivation and truffle harvesting — uses advanced sensors and automation to navigate terrain, monitor fungal crop health, and perform precision cultivation tasks. Integrates with Mycosoft\'s NatureOS bioinformatics platform.',
+    isNew: false
+  },
+  {
+    id: 'plant-robot-fabian-meder',
+    name: 'Plant-Powered Robots — Botanical Energy and Sensing for Robotics',
+    org: 'Sant\'Anna School of Advanced Studies, Pisa, Italy',
+    region: 'Italy',
+    storage: 0, energy: 3, farm: 3,
+    role: 'robotics',
+    year: 2025,
+    notes: 'Researcher Fabian Meder investigates how plant properties — including electrical signalling, energy generation, and structural growth — can power and guide robots. Combines plant bioelectricity with robotic systems for long-lived autonomous field devices. Reported in Science News, Feb 2025.',
+    isNew: false
+  },
+  {
+    id: 'instruo-pocket-scion',
+    name: 'Pocket SCÍON — Portable Biofeedback / Impedance Data Instrument',
+    org: 'Instruō (Glasgow, UK) & Tarun Nayar / Modern Biology (Vancouver, Canada)',
+    region: 'UK',
+    storage: 1, energy: 3, farm: 3,
+    role: 'interface',
+    year: 2025,
+    notes: 'Handheld device measuring electrical resistance/impedance changes in living organisms (plants, mycelium, soil). Reads biofeedback via sensor clips on fungi or plant tissue; outputs MIDI, OSC, audio. 5-voice polyphonic. Desktop app exposes raw impedance data stream for research/data visualisation. $149. Developed with ecologist-musician Tarun Nayar.',
+    isNew: false
+  },
+  {
+    id: 'simard-mother-tree-research',
+    name: 'Mother Tree Research — Forest Communication Networks',
+    org: 'Prof. Suzanne Simard, University of British Columbia',
+    region: 'Canada',
+    storage: 2, energy: 3, farm: 3,
+    role: 'research',
+    year: 2021,
+    notes: 'Foundational research showing trees communicate and share resources via mycorrhizal fungal networks (the "Wood Wide Web"). Mother trees preferentially nurture kin seedlings through carbon and nutrient transfer. Basis of natural data model research. Book: "Finding the Mother Tree" (2021).',
+    isNew: false
+  },
+  {
+    id: 'plant-electrical-signalling-research',
+    name: 'Electrical Transference in Plants — Action Potential Research',
+    org: 'Multiple institutions incl. Warsaw University of Life Sciences, Rothamsted Research (UK)',
+    region: 'UK',
+    storage: 1, energy: 3, farm: 3,
+    role: 'research',
+    year: 2023,
+    notes: 'Research into how plants propagate electrical signals (action potentials and variation potentials) across tissues in response to stimuli — light, wounding, touch, temperature. Analogous to neural signalling. Relevant to natural data transmission and plant-computer interfaces.',
+    isNew: false
+  },
+  {
+    id: 'root-communication-nutrient-signalling',
+    name: 'Root Communication & Underground Nutrient Signalling',
+    org: 'SPUN / Utrecht University / Vrije Universiteit Amsterdam',
+    region: 'Netherlands',
+    storage: 2, energy: 3, farm: 3,
+    role: 'research',
+    year: 2024,
+    notes: 'Research mapping how plant roots communicate resource availability through mycorrhizal networks — chemical, electrical, and hydraulic signals. Underground signalling networks as a model for distributed biological data systems. Published via SPUN research programme.',
+    isNew: false
+  },
+  {
+    id: 'water-communication-plants-hydraulic',
+    name: 'Water & Hydraulic Signalling in Plant Communication',
+    org: 'Multiple — including ETH Zürich, INRAE (France)',
+    region: 'Other',
+    storage: 1, energy: 3, farm: 3,
+    role: 'research',
+    year: 2022,
+    notes: 'Plants transmit information through rapid hydraulic pressure waves — measurable within seconds of wounding or drought stress. Distinct from chemical and electrical pathways. Studied as a third channel of inter-plant and intra-plant communication. Relevant to natural data model research.',
+    isNew: false
+  },
+  {
+    id: 'natural-data-models-living-systems',
+    name: 'Natural Data Models — Biological Information Processing in Living Systems',
+    org: 'Interdisciplinary — Unconventional Computing Lab UWE Bristol & collaborators',
+    region: 'UK',
+    storage: 2, energy: 3, farm: 3,
+    role: 'research',
+    year: 2023,
+    notes: 'Theoretical and experimental research treating living organisms — fungi, plants, slime moulds — as natural data systems. Studies how biological networks store, route, and process information without centralised control. Basis for bio-computing architectures.',
+    isNew: false
+  },
+  {
+    id: 'mother-tree-controversy-science',
+    name: 'Mother Tree Controversy — Scientific Debate on Forest Network Communication',
+    org: 'Multiple — Objections from Tamir Klein (Weizmann), commentary in Nature 2021',
+    region: 'Other',
+    storage: 1, energy: 2, farm: 3,
+    role: 'research',
+    year: 2021,
+    notes: 'Scientific debate around Simard\'s mother tree claims — critics argue carbon transfer quantities are ecologically marginal and "communication" is anthropomorphic. Peer responses published in Nature Ecology & Evolution (2021). Important context for evaluating mycorrhizal data models.',
+    isNew: false
+  },
+  {
+    id: 'fungus-robotics-biohybrid-research',
+    name: 'Fungus Robotics — Biohybrid Systems Research Overview',
+    org: 'Cornell University / UWE Bristol / Multiple',
+    region: 'USA',
+    storage: 1, energy: 2, farm: 3,
+    role: 'research',
+    year: 2024,
+    notes: 'Overview of the emerging field of fungus-controlled biohybrid robotics — mycelium used as living sensor arrays to control robot actuators. Includes Cornell Science Robotics 2024 work (Mishra, Shepherd) and Adamatzky\'s 30+ fungal sensing/computing devices. Potential for autonomous farm robots.',
+    isNew: false
+  }
+];
+
+// ═══════════════════════════════════════════════════
+// DATABASE — load / save
+// ═══════════════════════════════════════════════════
+function loadDB() {
+  try {
+    const raw = localStorage.getItem(DB_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return null;
+}
+
+function saveDB(data) {
+  try { localStorage.setItem(DB_KEY, JSON.stringify(data)); } catch(e) {}
+}
+
+function getDB() {
+  let db = loadDB();
+  if (!db) { db = [...SEED_DATA]; saveDB(db); }
+  return db;
+}
+
+// ═══════════════════════════════════════════════════
+// PAGE NAVIGATION
+// ═══════════════════════════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-links a').forEach(a => {
+    a.classList.remove('active');
+    a.removeAttribute('aria-current');
+  });
+  document.getElementById('page-' + id).classList.add('active');
+  const activeNav = document.getElementById('nav-' + id);
+  activeNav.classList.add('active');
+  activeNav.setAttribute('aria-current', 'page');
+
+  // Move focus to main content for screen readers
+  const mainMap = {
+    home: 'main-content',
+    database: 'main-content-database',
+    design: 'main-content-design',
+  };
+  const mainEl = document.getElementById(mainMap[id]);
+  if (mainEl) {
+    mainEl.setAttribute('tabindex', '-1');
+    mainEl.focus({ preventScroll: false });
+    setTimeout(() => mainEl.removeAttribute('tabindex'), 100);
+  }
+
+  if (id === 'home') { startHyphaCanvas(); mirrorServerPreview(); }
+  if (id === 'database') renderTable(getDB());
+  if (id === 'design') { generateStackSVG(); renderGallery(); }
+}
+
+// ═══════════════════════════════════════════════════
+// PAGE 1 — HYPHAL CANVAS ANIMATION
+// ═══════════════════════════════════════════════════
+let hyphaRunning = false;
+let hyphaNodes = [];
+let hyphaEdges = [];
+let glowTimers = [];
+
+function startHyphaCanvas() {
+  if (hyphaRunning) return;
+  hyphaRunning = true;
+  const canvas = document.getElementById('hypha-canvas');
+  const ctx = canvas.getContext('2d');
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Build hyphal network
+  const N = 120;
+  for (let i = 0; i < N; i++) {
+    hyphaNodes.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      glow: 0,
+      glowColor: ['#b87fff','#5ec9ff','#f07d28'][Math.floor(Math.random()*3)],
+      glowTarget: 0,
+      speed: 0.003 + Math.random() * 0.004
+    });
+  }
+
+  // Connect nearby nodes (hyphal strands)
+  for (let i = 0; i < N; i++) {
+    for (let j = i+1; j < N; j++) {
+      const dx = hyphaNodes[i].x - hyphaNodes[j].x;
+      const dy = hyphaNodes[i].y - hyphaNodes[j].y;
+      const dist = Math.sqrt(dx*dx+dy*dy);
+      if (dist < 180) {
+        hyphaEdges.push({ a: i, b: j, dist });
+      }
+    }
+  }
+
+  // Random glow trigger
+  function triggerGlow() {
+    const n = hyphaNodes[Math.floor(Math.random()*N)];
+    n.glowTarget = 1;
+    n.glowColor = ['#b87fff','#5ec9ff','#f07d28'][Math.floor(Math.random()*3)];
+    setTimeout(() => { n.glowTarget = 0; }, 2000 + Math.random()*3000);
+    setTimeout(triggerGlow, 600 + Math.random()*2400);
+  }
+  setTimeout(triggerGlow, 500);
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Update glow
+    hyphaNodes.forEach(n => {
+      if (n.glowTarget > n.glow) n.glow = Math.min(n.glow + n.speed, n.glowTarget);
+      else n.glow = Math.max(n.glow - n.speed * 0.5, n.glowTarget);
+    });
+
+    // Draw edges
+    hyphaEdges.forEach(e => {
+      const a = hyphaNodes[e.a], b = hyphaNodes[e.b];
+      const g = Math.max(a.glow, b.glow);
+      const alpha = 0.04 + g * 0.3;
+      const color = g > 0.05 ? (a.glow > b.glow ? a.glowColor : b.glowColor) : '#b87fff';
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      // Slight curve to mimic hyphae
+      const mx = (a.x+b.x)/2 + (Math.random()-0.5)*20;
+      const my = (a.y+b.y)/2 + (Math.random()-0.5)*20;
+      ctx.quadraticCurveTo(mx, my, b.x, b.y);
+      // Use globalAlpha for transparency — simpler and avoids hex manipulation
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 0.5 + g * 0.8;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    });
+
+    // Draw nodes
+    hyphaNodes.forEach(n => {
+      if (n.glow > 0.05) {
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, 2 + n.glow * 4, 0, Math.PI*2);
+        ctx.fillStyle = n.glowColor;
+        ctx.globalAlpha = n.glow * 0.7;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    });
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+function mirrorServerPreview() {
+  const src = document.getElementById('stack-svg');
+  const dest = document.getElementById('server-preview-svg');
+  if (src && src.innerHTML) {
+    dest.innerHTML = src.innerHTML;
+    dest.setAttribute('viewBox', src.getAttribute('viewBox') || '0 0 820 960');
+  } else {
+    // generate on demand
+    generateStackSVG();
+    setTimeout(mirrorServerPreview, 200);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// PAGE 2 — TABLE RENDERING
+// ═══════════════════════════════════════════════════
+let currentFilter = 'all';
+let currentRoleFilter = 'all';
+let sortKey = 'year';
+let sortAsc = false;
+
+function renderTable(data) {
+  let rows = [...data];
+
+  // filter by region
+  if (currentFilter !== 'all') {
+    rows = rows.filter(r => r.region.toLowerCase().includes(currentFilter.toLowerCase()));
+  }
+
+  // filter by role
+  if (currentRoleFilter !== 'all') {
+    rows = rows.filter(r => (r.role || '').toLowerCase() === currentRoleFilter);
+  }
+
+  // sort
+  rows.sort((a,b) => {
+    let av = a[sortKey] ?? '', bv = b[sortKey] ?? '';
+    if (typeof av === 'string') av = av.toLowerCase();
+    if (typeof bv === 'string') bv = bv.toLowerCase();
+    if (av < bv) return sortAsc ? -1 : 1;
+    if (av > bv) return sortAsc ? 1 : -1;
+    return 0;
+  });
+
+  const regionClass = { UK:'rt-uk', USA:'rt-us', Italy:'rt-it', Netherlands:'rt-eu', Canada:'rt-ca', Australia:'rt-au' };
+  const roleClass = {
+    storage:'rt-role-storage', computing:'rt-role-computing', robotics:'rt-role-robotics',
+    sensing:'rt-role-sensing', interface:'rt-role-interface', substrate:'rt-role-substrate',
+    institution:'rt-role-institution', research:'rt-role-research'
+  };
+
+  const tbody = document.getElementById('db-tbody');
+  tbody.innerHTML = rows.map(r => {
+    const rc = regionClass[r.region] || 'rt-eu';
+    const roleCls = roleClass[(r.role||'').toLowerCase()] || 'rt-role-substrate';
+    const storeDots = scoreDots(r.storage);
+    const energyDots = scoreDots(r.energy);
+    const farmDots = scoreDots(r.farm);
+    const isNewBadge = r.isNew
+      ? ' <span style="color:var(--orange);font-size:1rem;font-family:\'Share Tech Mono\',monospace" aria-label="New entry">[NEW]</span>'
+      : '';
+    return `<tr class="${r.isNew ? 'new-entry' : ''}">
+      <td>${r.name}${isNewBadge}</td>
+      <td style="white-space:nowrap">${r.org}</td>
+      <td><span class="region-tag ${rc}">${r.region}</span></td>
+      <td><span class="role-tag ${roleCls}">${r.role || '—'}</span></td>
+      <td>${storeDots}</td>
+      <td>${energyDots}</td>
+      <td>${farmDots}</td>
+      <td style="font-size:1rem;max-width:260px">${r.notes}</td>
+      <td style="font-family:'Share Tech Mono',monospace;font-size:1rem;color:var(--muted)">${r.year}</td>
+    </tr>`;
+  }).join('');
+
+  // Update scrape timestamps
+  const last = localStorage.getItem(LAST_SCRAPE_KEY);
+  const lastEl = document.getElementById('last-scrape-date');
+  if (lastEl) lastEl.textContent = last || 'Never (seed data loaded)';
+  document.getElementById('next-scrape-date').textContent = nextFriday();
+}
+
+function scoreDots(val) {
+  const max = 3;
+  const labels = ['Low', 'Medium', 'High'];
+  const label = val === 0 ? 'None' : labels[val - 1] || 'High';
+  let html = `<div class="score-dots" role="img" aria-label="Score: ${label} (${val} of ${max})">`;
+  for (let i = 0; i < max; i++) {
+    html += `<div class="score-dot ${i < val ? 'filled' : 'empty'}" aria-hidden="true"></div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function filterTable(region, btn) {
+  currentFilter = region;
+  document.querySelectorAll('.filter-chip').forEach(c => {
+    c.classList.remove('active');
+    c.setAttribute('aria-pressed', 'false');
+  });
+  btn.classList.add('active');
+  btn.setAttribute('aria-pressed', 'true');
+  renderTable(getDB());
+}
+
+function filterByRole(role, btn) {
+  currentRoleFilter = role;
+  document.querySelectorAll('.filter-chip-role').forEach(c => {
+    c.classList.remove('active');
+    c.setAttribute('aria-pressed', 'false');
+  });
+  btn.classList.add('active');
+  btn.setAttribute('aria-pressed', 'true');
+  renderTable(getDB());
+}
+
+function sortTable(key) {
+  if (sortKey === key) sortAsc = !sortAsc;
+  else { sortKey = key; sortAsc = true; }
+  renderTable(getDB());
+}
+
+function nextFriday() {
+  const d = new Date();
+  const day = d.getDay(); // 0=Sun,5=Fri
+  const daysUntilFriday = (5 - day + 7) % 7 || 7;
+  d.setDate(d.getDate() + daysUntilFriday);
+  return d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+}
+
+// ═══════════════════════════════════════════════════
+// PAGE 2 — WEB SCRAPER (Claude API with web search)
+// Six query sets, each targeting a distinct research
+// angle. Learned terms are merged in before each run.
+// Deduplicates against existing DB entries by id and
+// name similarity before saving any new finds.
+// ═══════════════════════════════════════════════════
+const SCRAPER_QUERY_SETS = [
+  {
+    label: 'Mycelium data storage & computing',
+    terms: [
+      'mycelium data storage biocomputing memristor 2024 2025',
+      'fungal computing bioelectronics neuromorphic 2024 2025',
+      'mycelium circuit board biodegradable electronics new research',
+      'pH balance data storage biological information encoding',
+      'pH gradient information storage living system chemical memory',
+      'water information transfer data biological hydraulic signalling',
+      'hydraulic data transfer plant water signalling information',
+      'aqueous data storage water-based biological memory system',
+      'chemical gradient data encoding pH biological computing',
+      'water communication data transfer mycorrhizal plant root network',
+      'biological information storage pH chemical signal organism'
+    ]
+  },
+  {
+    label: 'Plant & mycelium impedance / electrical potential',
+    terms: [
+      'plant impedance data biofeedback sensor research 2024 2025',
+      'mycelium impedance electrical signal measurement device',
+      'electrical potential plants bioelectricity sensor computing',
+      'electrical potential mycelium signal data recording interface'
+    ]
+  },
+  {
+    label: 'Fungal robotics & biohybrid systems',
+    terms: [
+      'mycelium controlled robot biohybrid fungal actuator 2024 2025',
+      'fungal mycelium robot electrophysiology Science Robotics',
+      'biohybrid robot fungi living sensor mycelium electrode',
+      'mycelium robot agricultural soil sensing autonomous field',
+      'fungus controlled locomotion walking robot electrical signal',
+      'Cornell organic robotics lab mycelium Shepherd Mishra',
+      'living soft robot mycelium biological controller',
+      'mycelium robotics bioinspired autonomous system fungal',
+      'robot controlled fungal electrical impulses Pleurotus eryngii',
+      'AMOLF mycorrhizal robot imaging microscope network mapping'
+    ]
+  },
+  {
+    label: 'Mycorrhizal networks mapping & data',
+    terms: [
+      'mycorrhizal network imaging robot mapping data 2024 2025',
+      'mycorrhizal fungi nutrient traffic data sensor technology'
+    ]
+  },
+  {
+    label: 'Bio-computing & living materials',
+    terms: [
+      'living materials biocomputing fungal substrate 2025',
+      'mycelium wearable bioelectronics sensing skin 2024 2025'
+    ]
+  },
+  {
+    label: 'Research — plant & fungal communication, natural data systems',
+    terms: [
+      'mycelium research plant communication underground network',
+      'root communication plant signalling mycorrhizal network',
+      'mother tree research Suzanne Simard forest network controversy',
+      'water communication plants hydraulic signalling root network',
+      'electrical transference in plants action potential signal propagation',
+      'biology based data models natural data systems living organisms',
+      'natural data models fungal network information processing',
+      'bio-computing research fungal network natural computation',
+      'fungus robotics biology research mycelium controlled systems',
+      'plant electrical signals bioelectricity communication research'
+    ]
+  }
+];
+
+// ─────────────────────────────────────────────────────────────
+// SELF-EXPANDING SCRAPER — Learned search terms
+//
+// Every time the scraper finds a new entry it makes a second
+// API call asking Claude to extract 2–4 keyword search queries
+// from that entry's name + notes. Those terms are stored in
+// localStorage under the entry's role and merged back into
+// SCRAPER_QUERY_SETS at the start of the next run.
+//
+// Cap: max 12 learned terms per role (prevents runaway growth).
+// ─────────────────────────────────────────────────────────────
+const LEARNED_TERMS_KEY = 'mycelium_learned_terms_v1';
+
+// Maps each role to the index of its query set in SCRAPER_QUERY_SETS
+const ROLE_TO_QUERY_SET = {
+  storage:     0,
+  computing:   0,
+  sensing:     1,
+  interface:   1,
+  robotics:    2,
+  substrate:   4,
+  institution: 4,
+  research:    5
+};
+
+function loadLearnedTerms() {
+  try {
+    const raw = localStorage.getItem(LEARNED_TERMS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch(e) { return {}; }
+}
+
+function saveLearnedTerms(terms) {
+  try { localStorage.setItem(LEARNED_TERMS_KEY, JSON.stringify(terms)); } catch(e) {}
+}
+
+// Merge any stored learned terms into SCRAPER_QUERY_SETS before each run
+function applyLearnedTerms() {
+  const learned = loadLearnedTerms();
+  let totalApplied = 0;
+  Object.entries(learned).forEach(([role, terms]) => {
+    const idx = ROLE_TO_QUERY_SET[role];
+    if (idx === undefined || !SCRAPER_QUERY_SETS[idx]) return;
+    const existing = SCRAPER_QUERY_SETS[idx].terms;
+    terms.forEach(t => {
+      if (!existing.includes(t)) {
+        existing.push(t);
+        totalApplied++;
+      }
+    });
+  });
+  return totalApplied;
+}
+
+// Extract new keyword terms from newly found entries via a second API call
+async function learnTermsFromNewItems(newItems) {
+  if (!newItems || newItems.length === 0) return;
+
+  const learned = loadLearnedTerms();
+
+  // Build a compact summary of each new item for the extraction prompt
+  const itemSummaries = newItems.map(item =>
+    `- name: "${item.name}" | role: ${item.role} | notes: "${(item.notes || '').slice(0, 200)}"`
+  ).join('\n');
+
+  // Build the full flat list of ALL terms already in use (seed + learned)
+  // so the extraction prompt can explicitly exclude them
+  const allExistingTerms = SCRAPER_QUERY_SETS.flatMap(qs => qs.terms);
+  const learnedFlat = Object.values(learned).flat();
+  const allKnownTerms = [...new Set([...allExistingTerms, ...learnedFlat])];
+
+  const extractPrompt = `You are expanding the search term library for a mycelium bio-computing research database scraper.
+
+New database entries were just found. For each entry, extract 2–4 specific web search query strings that would help find MORE similar projects, papers, or inventions on the web.
+
+New entries:
+${itemSummaries}
+
+RULES FOR EXTRACTED TERMS:
+1. Each term must be a 3–8 word search query, specific enough to find real results
+2. Do NOT include any of these already-used terms (exact match or very close variant):
+   ${allKnownTerms.join(' | ')}
+3. Do NOT include stop words or generic filler: "the", "and", "a", "an", "or", "of", "in", "is", "it", "to", "for", "with", "by", "on", "at", "invention", "technology", "research", "project", "new", "latest"
+4. DO include technical, scientific, or institutional terms specific to that entry — including non-English words or phrases if they are used in scientific literature and translate to concepts relevant to bio-computing, mycelium, or natural data systems (e.g. Japanese, German, French, Latin scientific terms)
+5. Each term should target a genuinely different search angle from what we already search
+6. Assign each term to the role of its source entry — this determines which search category it joins
+
+Return ONLY valid JSON — no markdown, no explanation:
+{
+  "slug-of-entry-name": {
+    "role": "storage|computing|substrate|interface|sensing|robotics|institution|research",
+    "terms": ["specific novel query 1", "specific novel query 2", "specific novel query 3"]
+  }
+}
+
+One key per entry. Prioritise institution names, species names, technique names, author surnames, and domain-specific terminology over generic phrases.`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 800,
+        messages: [{ role: 'user', content: extractPrompt }]
+      })
+    });
+
+    const data = await response.json();
+    const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) return;
+
+    const extracted = JSON.parse(match[0]);
+    const MAX_PER_ROLE = 20;
+
+    // Stop words to filter on the JS side as a safety net
+    const STOP_WORDS = new Set([
+      'the','and','a','an','or','of','in','is','it','to','for','with',
+      'by','on','at','invention','technology','research','project',
+      'new','latest','about','from','this','that','was','are','be'
+    ]);
+
+    // Full list of all existing terms to deduplicate against
+    const allTermsInUse = new Set(SCRAPER_QUERY_SETS.flatMap(qs => qs.terms));
+
+    Object.values(extracted).forEach(entry => {
+      const role = entry.role;
+      const terms = (entry.terms || []).filter(t => {
+        if (typeof t !== 'string' || t.length < 5) return false;
+        // Reject if it's only stop words
+        const words = t.toLowerCase().split(/\s+/);
+        if (words.every(w => STOP_WORDS.has(w))) return false;
+        // Reject if already in any query set
+        if (allTermsInUse.has(t)) return false;
+        return true;
+      });
+      if (!role || !terms.length) return;
+
+      if (!learned[role]) learned[role] = [];
+      terms.forEach(t => {
+        const alreadyLearned = learned[role].includes(t);
+        if (!alreadyLearned && learned[role].length < MAX_PER_ROLE) {
+          learned[role].push(t);
+          allTermsInUse.add(t); // prevent cross-role duplication in same run
+        }
+      });
+    });
+
+    saveLearnedTerms(learned);
+    return learned;
+  } catch(e) {
+    console.warn('Term extraction failed:', e);
+  }
+}
+
+async function runScraper() {
+  const statusEl = document.getElementById('scraper-status');
+  const allBtns = document.querySelectorAll('.btn-scrape');
+  allBtns.forEach(b => b.disabled = true);
+  statusEl.textContent = 'Searching…';
+  statusEl.style.color = 'var(--orange)';
+
+  // Merge any previously learned terms into SCRAPER_QUERY_SETS before building the prompt
+  const learnedCount = applyLearnedTerms();
+
+  try {
+    const db = getDB();
+    const existingNames = db.map(e => e.name.toLowerCase());
+    const existingIds = db.map(e => e.id);
+
+    // Build the full list of search queries across all query sets (now including learned terms)
+    const allQueries = SCRAPER_QUERY_SETS.flatMap(qs => qs.terms);
+    const querySetLabels = SCRAPER_QUERY_SETS.map(qs => `• ${qs.label}:\n  ${qs.terms.join('\n  ')}`).join('\n\n');
+
+    const prompt = `You are a research assistant with web search capability, tasked with finding NEW entries to add to a mycelium bio-computing research database.
+
+EXISTING DATABASE ENTRIES (do not re-add these):
+${db.map(e => `- ${e.name} [${e.org}, ${e.year}]`).join('\n')}
+
+YOUR SEARCH MISSION — search the web using ALL of these query angles:
+
+${querySetLabels}
+
+WHAT TO LOOK FOR:
+1. Mycelium / fungal data storage (memristors, organic RAM, fungal memory)
+2. Mycelium circuit board substrates or PCB alternatives
+3. Fungal / mycelium computing, bioelectronics, neuromorphic hardware
+4. Plant OR mycelium impedance measurement devices or research
+5. Plant OR mycelium electrical potential sensing or data recording
+6. Robots controlled by or incorporating fungus / fungi / mycelium
+7. Mycorrhizal network imaging, mapping robots, or data collection tools
+8. Biofeedback instruments reading electrical signals from plants or mycelium
+9. Research into plant communication, root communication, water communication, mother tree networks
+10. Research into electrical transference in plants or mycelium
+11. Biology-based or natural data models — organisms as computing substrates
+12. Bio-computing research articles, papers, and projects
+13. Fungus robotics research and biohybrid systems
+14. pH balance or pH gradient as a data storage or information encoding mechanism in mycelium or biological systems
+15. Water or hydraulic signalling as a means of information or data transfer in plants, fungi, or mycorrhizal networks
+16. Aqueous or chemical-gradient-based biological memory systems
+
+ROLE ASSIGNMENT — assign "role" based on what the entry primarily is:
+- "storage"     → primarily stores or encodes data using mycelium or biology.
+                  Includes: fungal memristors and organic RAM, pH gradient
+                  data encoding, chemical gradient memory systems, water or
+                  hydraulic signalling as information transfer, aqueous
+                  biological memory, and any living system where information
+                  is stored or transmitted via chemical, pH, or fluid state
+- "computing"   → performs computation using mycelium/biology
+- "substrate"   → provides biodegradable material for circuits/hardware
+- "interface"   → bridges biological and digital systems
+- "sensing"     → senses environment using mycelium/biology (no locomotion)
+- "robotics"    → ANY robot, autonomous system, or mechanical device that
+                  uses mycelium or fungi as a controller, sensor, actuator,
+                  or structural component. This includes: biohybrid robots,
+                  fungus-controlled walking or wheeled robots, robotic
+                  microscopes or imaging systems for fungal network study,
+                  autonomous soil-sensing robots using fungal signals, and
+                  any machine that incorporates living mycelium as part of
+                  its control or sensing loop. ALWAYS use "robotics" for
+                  these — do NOT use "sensing" or "computing" for robots.
+- "institution" → organisation, society, or funding body
+- "research"    → academic or scientific research into plant communication,
+                  root networks, mother tree controversy, water signalling,
+                  electrical transference in plants, natural data models,
+                  biology-based data systems, or any foundational study
+                  of how living systems store or transmit information
+
+IMPORTANT: Use role "research" generously for any paper, project, or study
+that investigates how plants, trees, or fungi communicate, signal, or store
+information — even if it is not directly building a computing device.
+
+IMPORTANT: Use role "robotics" for ANY project where a physical machine or
+autonomous system incorporates living mycelium or fungal tissue — even if
+the paper also discusses sensing or computing aspects.
+
+DEDUPLICATION RULES:
+- Do NOT include anything already in the existing database entries above
+- If you find an update to an existing entry set isUpdate=true and updateTarget to the exact existing entry name
+- Include items from any year if historically significant (e.g. Suzanne Simard's original mother tree work)
+
+Return ONLY a valid JSON array — no markdown, no explanation, no backticks:
+[
+  {
+    "id": "unique-kebab-slug",
+    "name": "Full Invention / Project / Paper Name",
+    "org": "Institution, University, or Author Name",
+    "region": "UK|USA|Italy|Netherlands|Canada|Australia|Other",
+    "storage": 0,
+    "energy": 0,
+    "farm": 0,
+    "role": "storage|computing|substrate|interface|sensing|robotics|institution|research",
+    "year": 2024,
+    "notes": "Concise description max 220 chars. Include key facts: what it covers, who did it, publication details.",
+    "isNew": true,
+    "isUpdate": false,
+    "updateTarget": ""
+  }
+]
+
+Score fields (0–3 each):
+- storage: 0=none, 1=indirect, 2=partial, 3=direct data storage capability
+- energy: 0=high/unknown, 1=moderate, 2=low, 3=very low / farm-compatible
+- farm: 0=incompatible, 1=possible, 2=good, 3=designed for farm/soil integration
+
+If nothing genuinely new is found, return [].`;
+
+    statusEl.textContent = 'Running web searches…';
+
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 2000,
+        tools: [{ "type": "web_search_20250305", "name": "web_search" }],
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+
+    const data = await response.json();
+    const fullText = (data.content || [])
+      .filter(b => b.type === 'text')
+      .map(b => b.text)
+      .join('');
+
+    // Extract JSON array from response
+    const jsonMatch = fullText.match(/\[[\s\S]*?\]/);
+    if (jsonMatch) {
+      let newItems;
+      try {
+        newItems = JSON.parse(jsonMatch[0]);
+      } catch(parseErr) {
+        // Try to find a cleaner JSON block
+        const cleanMatch = fullText.match(/\[\s*\{[\s\S]*?\}\s*\]/);
+        newItems = cleanMatch ? JSON.parse(cleanMatch[0]) : [];
+      }
+
+      let addCount = 0, updateCount = 0;
+
+      newItems.forEach(item => {
+        // Normalise role — allow all valid roles including research
+        if (!['storage','computing','substrate','interface','sensing','robotics','institution','research'].includes(item.role)) {
+          item.role = 'sensing';
+        }
+
+        if (item.isUpdate && item.updateTarget) {
+          // Update existing entry
+          const idx = db.findIndex(e =>
+            e.name.toLowerCase() === item.updateTarget.toLowerCase() ||
+            e.id === item.updateTarget
+          );
+          if (idx >= 0) {
+            db[idx] = { ...db[idx], ...item, isNew: true };
+            updateCount++;
+          }
+        } else {
+          // Check for duplicates by id or name similarity
+          const nameMatch = existingNames.some(n =>
+            n.includes(item.name.toLowerCase().slice(0,20)) ||
+            item.name.toLowerCase().includes(n.slice(0,20))
+          );
+          if (!existingIds.includes(item.id) && !nameMatch) {
+            db.push({ ...item, isNew: true });
+            existingIds.push(item.id);
+            existingNames.push(item.name.toLowerCase());
+            addCount++;
+          }
+        }
+      });
+
+      saveDB(db);
+      localStorage.setItem(LAST_SCRAPE_KEY, new Date().toLocaleString('en-GB'));
+
+      if (addCount + updateCount > 0) {
+        // Extract keyword terms from newly added entries and store for future runs
+        const newlyAdded = newItems.filter(item => !item.isUpdate);
+        if (newlyAdded.length > 0) {
+          statusEl.textContent = `Found ${addCount} new — learning search terms…`;
+          await learnTermsFromNewItems(newlyAdded);
+          // Count total learned terms across all roles
+          const learned = loadLearnedTerms();
+          const totalLearned = Object.values(learned).reduce((sum, arr) => sum + arr.length, 0);
+          statusEl.textContent = `Done — ${addCount} added, ${updateCount} updated · ${totalLearned} learned terms`;
+        } else {
+          statusEl.textContent = `Done — ${addCount} added, ${updateCount} updated`;
+        }
+        statusEl.style.color = 'var(--orange)';
+        renderTable(db);
+        generateStackSVG();
+      } else {
+        statusEl.textContent = 'Done — no new items found';
+        statusEl.style.color = 'var(--muted)';
+      }
+      setTimeout(() => { statusEl.textContent = 'Idle'; statusEl.style.color = 'var(--purple)'; }, 5000);
+
+    } else {
+      statusEl.textContent = 'No new items found';
+      statusEl.style.color = 'var(--muted)';
+      localStorage.setItem(LAST_SCRAPE_KEY, new Date().toLocaleString('en-GB'));
+      setTimeout(() => { statusEl.textContent = 'Idle'; statusEl.style.color = 'var(--purple)'; }, 3000);
+    }
+  } catch(err) {
+    console.error('Scraper error:', err);
+    statusEl.textContent = 'Error: ' + (err.message || 'Unknown error');
+    statusEl.style.color = '#e24b4a';
+    setTimeout(() => { statusEl.textContent = 'Idle'; statusEl.style.color = 'var(--purple)'; }, 6000);
+  }
+  allBtns.forEach(b => b.disabled = false);
+}
+
+// Auto-schedule: check every hour if it's Friday
+function scheduleScraper() {
+  setInterval(async () => {
+    const now = new Date();
+    if (now.getDay() !== 5) return; // Only run on Fridays
+
+    const lastRun = localStorage.getItem(LAST_SCRAPE_KEY);
+    const alreadyRanToday = lastRun &&
+      new Date(lastRun).toDateString() === now.toDateString();
+    if (alreadyRanToday) return;
+
+    // 1. Capture the design before the database changes it
+    await captureScreenshot();
+
+    // 2. Run the database scraper
+    await runScraper();
+
+    // 3. Re-generate the SVG with any new entries and capture again
+    generateStackSVG();
+    await captureScreenshot();
+
+    // 4. If the design page is active, refresh the gallery display
+    if (document.getElementById('page-design').classList.contains('active')) {
+      renderGallery();
+    }
+  }, 3600000); // check every hour
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  getDB();
+  generateStackSVG();
+  startHyphaCanvas();
+
+  // Database page timestamps
+  document.getElementById('next-scrape-date').textContent = nextFriday();
+  const last = localStorage.getItem(LAST_SCRAPE_KEY);
+  if (document.getElementById('last-scrape-date')) {
+    document.getElementById('last-scrape-date').textContent = last || 'Never (seed data loaded)';
+  }
+
+  scheduleScraper();
+});
+function generateStackSVG() {
+  const db = getDB();
+  const svg = document.getElementById('stack-svg');
+  if (!svg) return;
+
+  // Score inventions for best fit per role
+  const byRole = {};
+  db.forEach(item => {
+    const score = item.storage + item.energy + item.farm;
+    if (!byRole[item.role] || score > byRole[item.role].score) {
+      byRole[item.role] = { ...item, score };
+    }
+  });
+
+  const O = '#f07d28';   // orange = from DB
+  const P = '#b87fff';   // purple = speculative (7.2:1 contrast on dark bg)
+  const W = 'rgba(240,237,232,0.6)';
+  const DIM = 'rgba(240,237,232,0.3)';
+  const BG = 'rgba(240,237,232,0.05)';
+  const DASH = '4,4';
+
+  // Helper functions
+  const rect = (x,y,w,h,col,dash=false,rx=4) =>
+    `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="${BG}" stroke="${col}" stroke-width="${dash?1.2:1.5}" ${dash?`stroke-dasharray="${DASH}"`:''}/>`;
+
+  const label = (x,y,text,col,size=11,anchor='middle',mono=false) =>
+    `<text x="${x}" y="${y}" text-anchor="${anchor}" fill="${col}" font-size="${size}" ${mono?`font-family="'Share Tech Mono',monospace"`:`font-family="'Jost',sans-serif"`} font-weight="300">${text}</text>`;
+
+  const line = (x1,y1,x2,y2,col,dash=false) =>
+    `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="1" ${dash?`stroke-dasharray="${DASH}"`:''}/>`;
+
+  const connector = (x1,y1,x2,y2,col,dash=false) => {
+    const mx = (x1+x2)/2;
+    return `<path d="M${x1},${y1} C${x1},${y1+40} ${x2},${y2-40} ${x2},${y2}" stroke="${col}" stroke-width="1" fill="none" ${dash?`stroke-dasharray="${DASH}"`:''}/>`;
+  };
+
+  // Determine what we have
+  const hasStorage = byRole['storage'];
+  const hasComputing = byRole['computing'];
+  const hasInterface = byRole['interface'];
+  const hasSubstrate = byRole['substrate'];
+  const hasSensing = byRole['sensing'];
+
+  // Pick best substrate for PCB
+  const pcbSource = db.find(d => d.role === 'substrate' && d.id === 'myceliotronics') || byRole['substrate'];
+  const enclosureSource = db.find(d => d.role === 'substrate' && (d.id === 'canada-pmm' || d.id === 'ecovative-mycobond')) || byRole['substrate'];
+  const computeSource = byRole['computing'];
+  const storageSource = byRole['storage'];
+  const interfaceSource = byRole['interface'];
+  const sensorSource = byRole['sensing'];
+
+  const CX = 410; // center x
+
+  let svgContent = '';
+
+  // ── TITLE ──
+  svgContent += label(CX, 38, 'MYCELIUM SERVER STACK', W, 13, 'middle', true);
+  svgContent += label(CX, 56, '— speculative design synthesis —', DIM, 10, 'middle', true);
+
+  // ── OUTER ENCLOSURE (farm-grown housing) ──
+  const encColor = enclosureSource ? O : P;
+  svgContent += rect(30, 70, 760, 860, encColor, false, 6);
+  svgContent += label(CX, 92, enclosureSource ? `ENCLOSURE: ${enclosureSource.name.split('(')[0].trim().toUpperCase().slice(0,48)}` : 'ENCLOSURE: MYCELIUM COMPOSITE HOUSING [SPECULATIVE]', encColor, 9.5, 'middle', true);
+  svgContent += label(30, 92, enclosureSource ? `↳ ${enclosureSource.org}` : '↳ To be developed', encColor, 8.5, 'start', true);
+
+  // ── NUTRIENT / WATER LOOP (farm integration) ──
+  svgContent += rect(48, 108, 120, 56, P, true, 3);
+  svgContent += label(108, 132, 'NUTRIENT', P, 9, 'middle', true);
+  svgContent += label(108, 145, 'FLOW LOOP', P, 9, 'middle', true);
+  svgContent += label(108, 158, '[speculative]', P, 8, 'middle', true);
+
+  svgContent += rect(652, 108, 120, 56, P, true, 3);
+  svgContent += label(712, 132, 'CO₂ / TEMP', P, 9, 'middle', true);
+  svgContent += label(712, 145, 'MONITOR', sensorSource ? O : P, 9, 'middle', true);
+  svgContent += label(712, 158, sensorSource ? `↳ ${sensorSource.org.slice(0,18)}` : '[speculative]', sensorSource ? O : P, 8, 'middle', true);
+
+  svgContent += line(168, 136, CX-160, 136, P, true);
+  svgContent += line(CX+160, 136, 652, 136, sensorSource ? O : P, true);
+
+  // ── BIODEGRADABLE CIRCUIT BOARD (PCB layer) ──
+  const pcbCol = pcbSource ? O : P;
+  svgContent += rect(60, 180, 700, 80, pcbCol, false, 4);
+  svgContent += label(CX, 208, pcbSource ? `PCB SUBSTRATE: ${pcbSource.name.toUpperCase().slice(0,55)}` : 'BIODEGRADABLE PCB SUBSTRATE [SPECULATIVE — Ganoderma or equivalent]', pcbCol, 10, 'middle', true);
+  svgContent += label(CX, 226, pcbSource ? `${pcbSource.org} · heat-resistant to 200°C · decomposes in soil in 2 weeks` : 'Requires: flexible, heat-resistant, insulating fungal skin — not yet field-deployed at scale', pcbCol, 8.5, 'middle', true);
+  svgContent += label(CX, 243, pcbSource ? '↳ Replaces FR4 fibreglass — compostable' : '', pcbCol, 8, 'middle', true);
+
+  // ── MAIN COMPUTE LAYER ──
+  const compCol = computeSource ? O : P;
+  svgContent += rect(60, 278, 700, 130, compCol, false, 4);
+  svgContent += label(CX, 302, 'FUNGAL NEUROMORPHIC PROCESSOR', compCol, 11.5, 'middle', true);
+  svgContent += label(CX, 320, computeSource ? `${computeSource.name.slice(0,64)}` : 'Fungal Logic Gates — AND/OR/AND-NOT [SPECULATIVE at scale]', compCol, 9.5, 'middle', true);
+  svgContent += label(CX, 338, computeSource ? `${computeSource.org} · millivolt-level signals · self-regenerating · fault-tolerant` : 'Requires: reliable miniaturised fungal logic array', compCol, 8.5, 'middle', true);
+
+  // sub-boxes inside compute
+  svgContent += rect(80, 350, 200, 44, compCol, true, 3);
+  svgContent += label(180, 370, 'BOOLEAN GATE ARRAY', compCol, 9, 'middle', true);
+  svgContent += label(180, 384, computeSource ? '↳ AND/OR/AND-NOT' : '[uninvented at scale]', compCol, 8, 'middle', true);
+
+  svgContent += rect(310, 350, 200, 44, P, true, 3);
+  svgContent += label(410, 370, 'SIGNAL ROUTING', P, 9, 'middle', true);
+  svgContent += label(410, 384, '[speculative]', P, 8, 'middle', true);
+
+  svgContent += rect(540, 350, 200, 44, P, true, 3);
+  svgContent += label(640, 370, 'NANOPARTICLE MICRO-WIRE', P, 9, 'middle', true);
+  svgContent += label(640, 384, hasComputing ? '↳ Adamatzky (ongoing)' : '[speculative]', hasComputing ? O : P, 8, 'middle', true);
+
+  // ── BIO-ELECTRONIC INTERFACE ──
+  const intCol = interfaceSource ? O : P;
+  svgContent += connector(CX, 408, CX, 432, DIM);
+  svgContent += rect(60, 432, 700, 90, intCol, !interfaceSource, 4);
+  svgContent += label(CX, 456, 'BIO-ELECTRONIC INTERFACE LAYER', intCol, 11.5, 'middle', true);
+  svgContent += label(CX, 474, interfaceSource ? `${interfaceSource.name.slice(0,60)}` : 'Fungal Computer Interface [SPECULATIVE — reliable I/O unsolved]', intCol, 9.5, 'middle', true);
+  svgContent += label(CX, 492, interfaceSource ? `${interfaceSource.org} · FCI · NatureOS · Hypha Language · HDMEA Petraeus` : 'Requires: stable digital ↔ mycelium signal translation', intCol, 8.5, 'middle', true);
+  svgContent += label(CX, 510, interfaceSource ? '↳ Open-source hardware — SporeBase / Mushroom 1 / Petraeus' : '', intCol, 8, 'middle', true);
+
+  // ── ORGANIC RAM / STORAGE ──
+  const stCol = storageSource ? O : P;
+  svgContent += connector(CX, 522, CX, 548, DIM, !storageSource);
+  svgContent += rect(60, 548, 700, 90, stCol, !storageSource, 4);
+  svgContent += label(CX, 572, 'ORGANIC MEMORY — FUNGAL RAM', stCol, 11.5, 'middle', true);
+  svgContent += label(CX, 590, storageSource ? `${storageSource.name.slice(0,60)}` : 'Mycelium Memristor RAM [SPECULATIVE at scale]', stCol, 9.5, 'middle', true);
+  svgContent += label(CX, 608, storageSource ? `${storageSource.org} · up to 5,850 Hz · 90% accuracy · dehydratable` : 'Requires: high-density, miniaturised fungal memristor array', stCol, 8.5, 'middle', true);
+  svgContent += label(CX, 626, storageSource ? '↳ Retains state when dried · radiation-resistant · biodegradable' : '', stCol, 8, 'middle', true);
+
+  // ── POWER / ENERGY LAYER ──
+  svgContent += connector(CX, 638, CX, 664, DIM, true);
+  svgContent += rect(60, 664, 700, 70, P, true, 4);
+  svgContent += label(CX, 690, 'BIO-ELECTROCHEMICAL POWER GENERATION [SPECULATIVE]', P, 10, 'middle', true);
+  svgContent += label(CX, 708, 'Fungal microbial fuel cell — mycelium metabolic energy harvesting — not yet demonstrated at compute scale', P, 8.5, 'middle', true);
+  svgContent += label(CX, 724, '↳ Needs to be invented: stable, long-duration fungal battery or capacitor', P, 8, 'middle', true);
+
+  // ── FARM INTEGRATION LAYER ──
+  const farmCol = enclosureSource ? O : P;
+  svgContent += connector(CX, 734, CX, 760, DIM, true);
+  svgContent += rect(60, 760, 340, 70, O, false, 4);
+  svgContent += label(230, 784, 'AGRICULTURAL SUBSTRATE FEED', O, 10, 'middle', true);
+  svgContent += label(230, 800, 'Canada PMM · Ecovative · MOGU', O, 8.5, 'middle', true);
+  svgContent += label(230, 814, '↳ Lignocellulosic farm waste as growth medium', O, 8, 'middle', true);
+
+  svgContent += rect(420, 760, 340, 70, O, false, 4);
+  svgContent += label(590, 784, 'CARBON SEQUESTRATION MONITOR', O, 10, 'middle', true);
+  svgContent += label(590, 800, 'Mycosoft SporeBase · NatureOS', O, 8.5, 'middle', true);
+  svgContent += label(590, 814, '↳ Real-time CO₂, humidity, temp · carbon credits', O, 8, 'middle', true);
+
+  // ── LEGEND at bottom ──
+  svgContent += line(60, 854, 290, 854, O);
+  svgContent += label(298, 858, '= Invention exists in database', O, 9, 'start', true);
+  svgContent += line(460, 854, 580, 854, P, true);
+  svgContent += label(588, 858, '= Speculative / uninvented', P, 9, 'start', true);
+
+  // ── Hyphal decorative lines around edges ──
+  const hyphalDec = `
+    <path d="M30,500 Q15,480 30,460 Q15,440 30,420" stroke="rgba(155,89,245,0.15)" stroke-width="0.8" fill="none"/>
+    <path d="M790,500 Q805,480 790,460 Q805,440 790,420" stroke="rgba(58,181,247,0.15)" stroke-width="0.8" fill="none"/>
+    <path d="M30,700 Q15,680 30,660" stroke="rgba(240,125,40,0.12)" stroke-width="0.8" fill="none"/>
+  `;
+  svgContent += hyphalDec;
+
+  svg.innerHTML = svgContent;
+
+  // Generate design notes
+  const notes = [];
+  if (storageSource) notes.push(`<strong style="color:var(--orange)">${storageSource.name}</strong> (${storageSource.org}, ${storageSource.year}) provides the organic memory layer — currently the strongest candidate for fungal RAM.`);
+  if (computeSource) notes.push(`<strong style="color:var(--orange)">${computeSource.name}</strong> underpins the neuromorphic processor layer, with logic gate and memory formation demonstrated at UWE Bristol.`);
+  if (interfaceSource) notes.push(`<strong style="color:var(--orange)">${interfaceSource.org}</strong>'s FCI and NatureOS provide the bio-electronic interface, the most farm-aligned component in the stack.`);
+  notes.push(`<span style="color:var(--purple)">Purple components</span> — bio-electrochemical power generation, signal routing, and the nutrient flow loop — remain uninvented at computing scale and represent the primary research gaps for this project.`);
+
+  const notesEl = document.getElementById('design-notes');
+  if (notesEl) notesEl.innerHTML = notes.map(n => `<p style="margin-bottom:0.75rem">${n}</p>`).join('');
+
+  // Mirror to page 1
+  mirrorServerPreview();
+}
+
+// ═══════════════════════════════════════════════════
+// PAGE 3 — SCREENSHOT GALLERY
+// ═══════════════════════════════════════════════════
+function loadScreenshots() {
+  try {
+    const raw = localStorage.getItem(SCREENSHOTS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+
+function saveScreenshots(shots) {
+  try { localStorage.setItem(SCREENSHOTS_KEY, JSON.stringify(shots)); } catch(e) {}
+}
+
+// ─────────────────────────────────────────────────────────────
+// captureScreenshot
+//
+// Two-path approach:
+//  1. PRIMARY  — serialize the SVG element directly to a canvas
+//     via a Blob URL + drawImage. Works whether the page is
+//     visible or hidden (display:none).
+//  2. FALLBACK — html2canvas on the wrapper element. Only works
+//     when the design page is the active visible page.
+//
+// The SVG path is always tried first so Friday auto-captures
+// (which happen while the user may be on a different page)
+// always succeed.
+// ─────────────────────────────────────────────────────────────
+async function captureScreenshot() {
+  // Ensure the SVG is populated with the latest data
+  generateStackSVG();
+
+  let dataUrl = null;
+
+  // ── PATH 1: SVG → canvas (works when hidden) ──────────────
+  try {
+    const svgEl = document.getElementById('stack-svg');
+    if (svgEl) {
+      dataUrl = await svgToDataUrl(svgEl);
+    }
+  } catch (e) {
+    console.warn('SVG capture path failed, trying html2canvas:', e);
+  }
+
+  // ── PATH 2: html2canvas fallback (visible page only) ───────
+  if (!dataUrl) {
+    try {
+      const el = document.getElementById('stack-svg-wrap');
+      if (el && typeof html2canvas !== 'undefined') {
+        // Temporarily make the element renderable if hidden
+        const wasHidden = window.getComputedStyle(el).display === 'none';
+        if (wasHidden) {
+          el.style.position = 'absolute';
+          el.style.visibility = 'hidden';
+          el.style.display = 'block';
+        }
+        const canvas = await html2canvas(el, {
+          backgroundColor: '#030305',
+          scale: 1,
+          useCORS: true,
+          logging: false
+        });
+        dataUrl = canvas.toDataURL('image/png');
+        if (wasHidden) {
+          el.style.position = '';
+          el.style.visibility = '';
+          el.style.display = '';
+        }
+      }
+    } catch (e) {
+      console.warn('html2canvas fallback also failed:', e);
+    }
+  }
+
+  if (!dataUrl) {
+    console.warn('captureScreenshot: both capture paths failed');
+    return;
+  }
+
+  // ── Save & update gallery ───────────────────────────────────
+  const shots = loadScreenshots();
+  shots.unshift({
+    date: new Date().toLocaleDateString('en-GB', {
+      weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
+    }),
+    timestamp: Date.now(),
+    img: dataUrl,
+    count: getDB().length
+  });
+  if (shots.length > 52) shots.length = 52;
+  saveScreenshots(shots);
+
+  // Only re-render the gallery if the design page is currently active
+  if (document.getElementById('page-design').classList.contains('active')) {
+    renderGallery();
+  }
+}
+
+// ── SVG → PNG data URL via off-screen canvas ───────────────
+// Serialises the SVG, inlines a dark background rect, renders
+// it into an Image, then draws that onto a canvas.
+function svgToDataUrl(svgEl) {
+  return new Promise((resolve, reject) => {
+    try {
+      // Clone so we can modify without affecting the live element
+      const clone = svgEl.cloneNode(true);
+
+      // Read declared viewBox dimensions
+      const vb = (clone.getAttribute('viewBox') || '0 0 820 960').split(/\s+/).map(Number);
+      const W = vb[2] || 820;
+      const H = vb[3] || 960;
+
+      clone.setAttribute('width', W);
+      clone.setAttribute('height', H);
+      clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+      // Prepend a dark background rect
+      const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      bg.setAttribute('width', W);
+      bg.setAttribute('height', H);
+      bg.setAttribute('fill', '#030305');
+      clone.insertBefore(bg, clone.firstChild);
+
+      // Inline all computed styles on text elements so fonts survive serialisation
+      clone.querySelectorAll('text').forEach(t => {
+        const ff = t.getAttribute('font-family') || "'Share Tech Mono',monospace";
+        const fs = t.getAttribute('font-size') || '12';
+        const fill = t.getAttribute('fill') || '#f0ede8';
+        t.style.fontFamily = ff;
+        t.style.fontSize = fs + 'px';
+        t.style.fill = fill;
+      });
+
+      const svgString = new XMLSerializer().serializeToString(clone);
+      const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = W;
+        canvas.height = H;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#030305';
+        ctx.fillRect(0, 0, W, H);
+        ctx.drawImage(img, 0, 0, W, H);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = (e) => {
+        URL.revokeObjectURL(url);
+        reject(e);
+      };
+      img.src = url;
+    } catch (e) {
+      reject(e);
+    }
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// isBlankImage — returns true if the data URL is a solid-colour
+// canvas with no meaningful content (pixel variance < threshold).
+// Used to auto-purge any failed auto-captures stored before the
+// SVG serialiser fix was applied.
+// ─────────────────────────────────────────────────────────────
+function isBlankImage(dataUrl) {
+  if (!dataUrl || !dataUrl.startsWith('data:image')) return true;
+  try {
+    // Sample the first 2000 chars of the base64 payload.
+    // A fully black/blank PNG has very low entropy — its base64
+    // repeats the same byte sequences. A real SVG diagram has
+    // varied content. We use a simple variance heuristic.
+    const b64 = dataUrl.split(',')[1] || '';
+    if (b64.length < 100) return true; // suspiciously small
+    // Count unique characters in first 500 chars of payload
+    const sample = b64.slice(0, 500);
+    const unique = new Set(sample).size;
+    // A blank black PNG has ~8–12 unique b64 chars in its payload.
+    // A real diagram has 40+. Threshold of 20 is conservative.
+    return unique < 20;
+  } catch(e) { return false; }
+}
+
+function renderGallery() {
+  let shots = loadScreenshots();
+  const container = document.getElementById('gallery-container');
+  if (!container) return;
+
+  // Auto-purge any blank captures from before the SVG serialiser fix
+  const before = shots.length;
+  shots = shots.filter(s => !isBlankImage(s.img));
+  if (shots.length !== before) {
+    saveScreenshots(shots);
+  }
+
+  if (shots.length === 0) {
+    container.innerHTML = '<p class="gallery-empty" role="listitem">No archived designs yet. The first screenshot will be taken this Friday before the weekly database update.</p>';
+    return;
+  }
+
+  container.innerHTML = shots.map(s => `
+    <div class="gallery-item"
+         role="listitem"
+         tabindex="0"
+         onclick="viewShot('${s.timestamp}')"
+         onkeydown="if(event.key==='Enter'){event.preventDefault();viewShot('${s.timestamp}')}"
+         aria-label="Design archived on ${s.date}, ${s.count} database entries. Press Enter to view full size.">
+      <img src="${s.img}" alt="Mycelium server stack design from ${s.date}" loading="lazy">
+      <div class="gallery-item-label" aria-hidden="true">
+        <span>${s.date} · ${s.count} entries</span>
+        <button class="gallery-delete-btn"
+                title="Delete this screenshot"
+                aria-label="Delete screenshot from ${s.date}"
+                onclick="event.stopPropagation(); deleteShot(${s.timestamp})">&#10005;</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function deleteShot(timestamp) {
+  let shots = loadScreenshots();
+  shots = shots.filter(s => s.timestamp !== timestamp);
+  saveScreenshots(shots);
+  renderGallery();
+}
+
+function clearGallery() {
+  if (!confirm('Delete all screenshots from the gallery? This cannot be undone.')) return;
+  saveScreenshots([]);
+  renderGallery();
+}
+
+function viewShot(timestamp) {
+  const shots = loadScreenshots();
+  const shot = shots.find(s => s.timestamp == timestamp);
+  if (!shot) return;
+  try {
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(`<!DOCTYPE html><html lang="en"><head><title>Design – ${shot.date}</title><meta charset="UTF-8"></head><body style="background:#030305;margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh"><img src="${shot.img}" style="max-width:100%;max-height:100vh" alt="Mycelium server stack design from ${shot.date}"></body></html>`);
+    }
+  } catch(e) {
+    // Fallback: open in same tab
+    const a = document.createElement('a');
+    a.href = shot.img;
+    a.download = `mycelium-design-${shot.date.replace(/\s/g,'-')}.png`;
+    a.click();
+  }
+}
+
+// ── Init page ─────────────────────────────────────
+// ── Filter chip handler ───────────────────────────
+// If chip was already active → toggle it off and re-filter.
+// If chip was inactive → activate it and run a targeted search.
+// ── Apply active filter to stored results ─────────
+// ── Main search ───────────────────────────────────
+// forceAll=true → search all active terms (Run Now / Friday job)
+// forceAll=false, terms=[...] → search specific terms only
+// ── Sort ──────────────────────────────────────────
+// ── Render table ──────────────────────────────────
+// ═══════════════════════════════════════════════════
+// PAGE 3 — GENERATIVE SERVER STACK SVG
+// ═══════════════════════════════════════════════════
+</script>
+</body>
+</html>
